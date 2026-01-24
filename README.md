@@ -70,8 +70,8 @@ Each pillar has its own tracking issue with specific metrics to implement.
 
 ## Roadmap
 
-- [ ] Core scanning framework
-- [ ] Pillar 1: Style & Validation checks
+- [x] Core scanning framework
+- [x] Pillar 1: Style & Validation checks
 - [ ] Pillar 2: Build System checks
 - [ ] Pillar 3: Testing checks
 - [ ] Pillar 4: Documentation checks

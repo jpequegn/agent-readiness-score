@@ -1,8 +1,6 @@
 """Command-line interface for agent-readiness-score."""
 
-import json
 import sys
-from pathlib import Path
 
 
 def main() -> None:
