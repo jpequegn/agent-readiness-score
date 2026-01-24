@@ -1,6 +1,7 @@
 """Tests for Style & Validation pillar."""
 
 from pathlib import Path
+
 from agent_readiness.pillars.style import StylePillar
 
 
@@ -140,7 +141,9 @@ def test_check_formatter_config_not_found(tmp_path: Path) -> None:
 
 def test_check_precommit_hooks_found(tmp_path: Path) -> None:
     """Test detecting .pre-commit-config.yaml."""
-    (tmp_path / ".pre-commit-config.yaml").write_text("repos:\n  - repo: https://github.com/psf/black\n")
+    (tmp_path / ".pre-commit-config.yaml").write_text(
+        "repos:\n  - repo: https://github.com/psf/black\n"
+    )
 
     pillar = StylePillar()
     result = pillar._check_precommit_hooks(tmp_path)
@@ -162,7 +165,9 @@ def test_check_ci_integration_github_actions(tmp_path: Path) -> None:
     """Test detecting GitHub Actions workflow."""
     workflows_dir = tmp_path / ".github" / "workflows"
     workflows_dir.mkdir(parents=True)
-    (workflows_dir / "lint.yml").write_text("name: Lint\non: push\njobs:\n  lint:\n    runs-on: ubuntu-latest\n")
+    (workflows_dir / "lint.yml").write_text(
+        "name: Lint\non: push\njobs:\n  lint:\n    runs-on: ubuntu-latest\n"
+    )
 
     pillar = StylePillar()
     result = pillar._check_ci_integration(tmp_path)
@@ -309,7 +314,9 @@ def test_evaluate_multi_language_project(tmp_path: Path) -> None:
     formatter_result = [r for r in results if r.name == "Has formatter configuration"][0]
     assert formatter_result.passed
     # Should find either Python, JS, or Go formatter
-    assert any(x in formatter_result.message.lower() for x in ["pyproject.toml", ".prettierrc", "gofmt"])
+    assert any(
+        x in formatter_result.message.lower() for x in ["pyproject.toml", ".prettierrc", "gofmt"]
+    )
 
 
 def test_evaluate_no_languages_detected(tmp_path: Path) -> None:

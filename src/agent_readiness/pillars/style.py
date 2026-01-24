@@ -1,6 +1,7 @@
 """Style & Validation pillar implementation."""
 
 from pathlib import Path
+
 from agent_readiness.models import CheckResult, Severity
 from agent_readiness.pillar import Pillar
 
@@ -65,7 +66,8 @@ class StylePillar(Pillar):
             files = list(target_dir.glob(f"**/*{ext}"))
             # Filter out common ignore patterns
             files = [
-                f for f in files
+                f
+                for f in files
                 if not any(
                     part in f.parts
                     for part in ["node_modules", "venv", ".venv", "env", ".git", "dist", "build"]
@@ -79,8 +81,22 @@ class StylePillar(Pillar):
     def _check_any_linter_config(self, target_dir: Path, languages: set[str]) -> CheckResult:
         """Check if any linter configuration exists."""
         linter_configs = {
-            "python": ["ruff.toml", ".ruff.toml", ".flake8", ".pylintrc", "pylint.rc", "pyproject.toml"],
-            "javascript": [".eslintrc", ".eslintrc.json", ".eslintrc.js", ".eslintrc.yml", ".eslintrc.yaml", "eslint.config.js"],
+            "python": [
+                "ruff.toml",
+                ".ruff.toml",
+                ".flake8",
+                ".pylintrc",
+                "pylint.rc",
+                "pyproject.toml",
+            ],
+            "javascript": [
+                ".eslintrc",
+                ".eslintrc.json",
+                ".eslintrc.js",
+                ".eslintrc.yml",
+                ".eslintrc.yaml",
+                "eslint.config.js",
+            ],
             "go": [".golangci.yml", ".golangci.yaml"],
             "rust": ["rustfmt.toml", ".rustfmt.toml"],
         }
@@ -93,8 +109,12 @@ class StylePillar(Pillar):
                 config_path = target_dir / config_file
                 if config_path.exists():
                     if config_file == "pyproject.toml":
-                        content = config_path.read_text()
-                        if "[tool.ruff]" in content or "[tool.pylint]" in content or "[tool.flake8]" in content:
+                        content = config_path.read_text(encoding="utf-8", errors="ignore")
+                        if (
+                            "[tool.ruff]" in content
+                            or "[tool.pylint]" in content
+                            or "[tool.flake8]" in content
+                        ):
                             found_configs.append(config_file)
                             break
                     else:
@@ -120,7 +140,14 @@ class StylePillar(Pillar):
         """Check if formatter configuration exists."""
         formatter_configs = {
             "python": ["pyproject.toml", ".black", "black.toml"],
-            "javascript": [".prettierrc", ".prettierrc.json", ".prettierrc.js", ".prettierrc.yml", ".prettierrc.yaml", "prettier.config.js"],
+            "javascript": [
+                ".prettierrc",
+                ".prettierrc.json",
+                ".prettierrc.js",
+                ".prettierrc.yml",
+                ".prettierrc.yaml",
+                "prettier.config.js",
+            ],
             "go": ["__builtin__"],  # gofmt is built-in
             "rust": ["rustfmt.toml", ".rustfmt.toml"],
         }
@@ -139,7 +166,7 @@ class StylePillar(Pillar):
                 config_path = target_dir / config_file
                 if config_path.exists():
                     if config_file == "pyproject.toml":
-                        content = config_path.read_text()
+                        content = config_path.read_text(encoding="utf-8", errors="ignore")
                         if "[tool.black]" in content or "[tool.ruff.format]" in content:
                             found_configs.append(config_file)
                             break
@@ -228,7 +255,7 @@ class StylePillar(Pillar):
             if doc_path.exists():
                 # For CONTRIBUTING.md, check if it has style guide content
                 if "CONTRIBUTING" in doc_file:
-                    content = doc_path.read_text().lower()
+                    content = doc_path.read_text(encoding="utf-8", errors="ignore").lower()
                     if "style" in content or "format" in content or "lint" in content:
                         found_docs.append(doc_file)
                 else:
