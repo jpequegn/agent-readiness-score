@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from agent_readiness.models import CheckResult
+from agent_readiness.models import CheckResult, Severity
 from agent_readiness.pillar import Pillar
 
 
@@ -50,3 +50,51 @@ class BuildPillar(Pillar):
             languages.add("go")
 
         return languages
+
+    def _check_package_manager_exists(
+        self, target_dir: Path, languages: set[str]
+    ) -> list[CheckResult]:
+        """Check if each language has a package manager file.
+
+        Args:
+            target_dir: Directory to scan
+            languages: Set of detected languages
+
+        Returns:
+            List of CheckResults, one per language
+        """
+        results = []
+
+        package_files = {
+            "python": ["pyproject.toml", "setup.py", "requirements.txt"],
+            "javascript": ["package.json"],
+            "rust": ["Cargo.toml"],
+            "go": ["go.mod"],
+        }
+
+        for lang in sorted(languages):
+            files = package_files.get(lang, [])
+            found_files = [f for f in files if (target_dir / f).exists()]
+
+            if found_files:
+                results.append(
+                    CheckResult(
+                        name=f"{lang.capitalize()} package manager",
+                        passed=True,
+                        message=f"{lang.capitalize()} project found: {', '.join(found_files)}",
+                        severity=Severity.REQUIRED,
+                        level=1,
+                    )
+                )
+            else:
+                results.append(
+                    CheckResult(
+                        name=f"{lang.capitalize()} package manager",
+                        passed=False,
+                        message=f"No {lang} package manager file found (expected: {', '.join(files)})",
+                        severity=Severity.REQUIRED,
+                        level=1,
+                    )
+                )
+
+        return results

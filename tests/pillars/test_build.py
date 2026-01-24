@@ -84,3 +84,49 @@ def test_detect_languages_none(tmp_path: Path) -> None:
     languages = pillar._detect_languages(tmp_path)
 
     assert languages == set()
+
+
+def test_check_package_manager_python_pyproject(tmp_path: Path) -> None:
+    """Test detecting Python package manager via pyproject.toml."""
+    (tmp_path / "pyproject.toml").touch()
+
+    pillar = BuildPillar()
+    results = pillar._check_package_manager_exists(tmp_path, {"python"})
+
+    assert len(results) == 1
+    assert results[0].passed
+    assert "python" in results[0].message.lower()
+    assert "pyproject.toml" in results[0].message
+
+
+def test_check_package_manager_javascript(tmp_path: Path) -> None:
+    """Test detecting JavaScript package manager via package.json."""
+    (tmp_path / "package.json").touch()
+
+    pillar = BuildPillar()
+    results = pillar._check_package_manager_exists(tmp_path, {"javascript"})
+
+    assert len(results) == 1
+    assert results[0].passed
+    assert "javascript" in results[0].message.lower()
+
+
+def test_check_package_manager_multiple_languages(tmp_path: Path) -> None:
+    """Test detecting package managers for multiple languages."""
+    (tmp_path / "pyproject.toml").touch()
+    (tmp_path / "package.json").touch()
+
+    pillar = BuildPillar()
+    results = pillar._check_package_manager_exists(tmp_path, {"python", "javascript"})
+
+    assert len(results) == 2
+    assert all(r.passed for r in results)
+
+
+def test_check_package_manager_missing(tmp_path: Path) -> None:
+    """Test package manager check fails when files missing."""
+    pillar = BuildPillar()
+    results = pillar._check_package_manager_exists(tmp_path, {"python"})
+
+    assert len(results) == 1
+    assert not results[0].passed
