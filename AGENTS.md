@@ -39,6 +39,18 @@ agent-readiness-score/
 └── LICENSE
 ```
 
+### Pillar 1: Style & Validation (`pillars/style.py`)
+
+Checks for:
+- **Level 1**: Any linter configuration (ruff, eslint, etc.)
+- **Level 2**: Formatter configuration (black, prettier, etc.)
+- **Level 3**: Pre-commit hooks, CI linting/formatting
+- **Level 4**: Editor integration documentation
+- **Level 5**: Style guide for AI agents
+
+**Language Support**: Python, JavaScript/TypeScript, Go, Rust
+**CI Detection**: GitHub Actions, GitLab CI, CircleCI, Jenkins, Travis CI
+
 ## Key Commands
 
 ```bash
