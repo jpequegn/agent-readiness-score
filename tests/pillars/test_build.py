@@ -290,3 +290,55 @@ def test_check_containerization_not_found(tmp_path: Path) -> None:
     result = pillar._check_containerization(tmp_path)
 
     assert not result.passed
+
+
+def test_check_dependency_automation_dependabot(tmp_path: Path) -> None:
+    """Test detecting Dependabot configuration."""
+    (tmp_path / ".github").mkdir()
+    (tmp_path / ".github" / "dependabot.yml").touch()
+
+    pillar = BuildPillar()
+    result = pillar._check_dependency_automation(tmp_path)
+
+    assert result.passed
+    assert "dependabot" in result.message.lower()
+
+
+def test_check_dependency_automation_renovate(tmp_path: Path) -> None:
+    """Test detecting Renovate configuration."""
+    (tmp_path / "renovate.json").touch()
+
+    pillar = BuildPillar()
+    result = pillar._check_dependency_automation(tmp_path)
+
+    assert result.passed
+    assert "renovate" in result.message.lower()
+
+
+def test_check_dependency_automation_not_found(tmp_path: Path) -> None:
+    """Test dependency automation check fails when not configured."""
+    pillar = BuildPillar()
+    result = pillar._check_dependency_automation(tmp_path)
+
+    assert not result.passed
+
+
+def test_check_reproducible_builds_with_lock_files(tmp_path: Path) -> None:
+    """Test reproducible builds check passes with lock files."""
+    (tmp_path / "poetry.lock").touch()
+    readme = tmp_path / "README.md"
+    readme.write_text("We use lock files for reproducible builds.")
+
+    pillar = BuildPillar()
+    # Need to pass languages that have lock files
+    result = pillar._check_reproducible_builds(tmp_path, {"python"})
+
+    assert result.passed
+
+
+def test_check_reproducible_builds_missing_lock_files(tmp_path: Path) -> None:
+    """Test reproducible builds check fails without lock files."""
+    pillar = BuildPillar()
+    result = pillar._check_reproducible_builds(tmp_path, {"python"})
+
+    assert not result.passed

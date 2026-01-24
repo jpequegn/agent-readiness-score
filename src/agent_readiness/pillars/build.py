@@ -363,3 +363,106 @@ class BuildPillar(Pillar):
                 severity=Severity.OPTIONAL,
                 level=4,
             )
+
+    def _check_dependency_automation(self, target_dir: Path) -> CheckResult:
+        """Check if automatic dependency updates are configured (repository-wide).
+
+        Args:
+            target_dir: Directory to scan
+
+        Returns:
+            Single CheckResult for the repository
+        """
+        found = []
+
+        if (target_dir / ".github" / "dependabot.yml").exists():
+            found.append("Dependabot")
+
+        if (target_dir / "renovate.json").exists() or (
+            target_dir / ".renovaterc"
+        ).exists():
+            found.append("Renovate")
+
+        if (target_dir / ".github" / "renovate.json").exists():
+            found.append("Renovate")
+
+        if found:
+            return CheckResult(
+                name="Dependency automation",
+                passed=True,
+                message=f"Found {', '.join(found)} configuration",
+                severity=Severity.OPTIONAL,
+                level=5,
+            )
+        else:
+            return CheckResult(
+                name="Dependency automation",
+                passed=False,
+                message="No dependency automation configured",
+                severity=Severity.OPTIONAL,
+                level=5,
+            )
+
+    def _check_reproducible_builds(
+        self, target_dir: Path, languages: set[str]
+    ) -> CheckResult:
+        """Check if reproducible builds are configured (repository-wide).
+
+        Args:
+            target_dir: Directory to scan
+            languages: Set of detected languages
+
+        Returns:
+            Single CheckResult for the repository
+        """
+        criteria = []
+
+        # Check if all languages have lock files
+        lock_files = {
+            "python": ["poetry.lock", "Pipfile.lock", "requirements.lock"],
+            "javascript": ["package-lock.json", "yarn.lock", "pnpm-lock.yaml"],
+            "rust": ["Cargo.lock"],
+            "go": ["go.sum"],
+        }
+
+        all_have_locks = True
+        for lang in languages:
+            files = lock_files.get(lang, [])
+            if not any((target_dir / f).exists() for f in files):
+                all_have_locks = False
+                break
+
+        if all_have_locks and languages:
+            criteria.append("all languages have lock files")
+
+        # Check for reproducibility mentions in documentation
+        doc_files = ["README.md", "CONTRIBUTING.md", "BUILD.md"]
+        reproducibility_keywords = ["reproducible", "hermetic", "deterministic"]
+
+        for doc in doc_files:
+            doc_path = target_dir / doc
+            if doc_path.exists():
+                try:
+                    content = doc_path.read_text(encoding="utf-8", errors="ignore").lower()
+                    if any(keyword in content for keyword in reproducibility_keywords):
+                        criteria.append(f"reproducibility mentioned in {doc}")
+                        break
+                except Exception:
+                    pass
+
+        if criteria:
+            return CheckResult(
+                name="Reproducible builds",
+                passed=True,
+                message=f"Reproducible builds configured: {', '.join(criteria)}",
+                severity=Severity.OPTIONAL,
+                level=5,
+            )
+        else:
+            return CheckResult(
+                name="Reproducible builds",
+                passed=False,
+                message="No reproducible build configuration detected",
+                severity=Severity.OPTIONAL,
+                level=5,
+            )
