@@ -130,3 +130,58 @@ def test_check_package_manager_missing(tmp_path: Path) -> None:
 
     assert len(results) == 1
     assert not results[0].passed
+
+
+def test_check_lock_file_python(tmp_path: Path) -> None:
+    """Test detecting Python lock file."""
+    (tmp_path / "poetry.lock").touch()
+
+    pillar = BuildPillar()
+    results = pillar._check_lock_file_exists(tmp_path, {"python"})
+
+    assert len(results) == 1
+    assert results[0].passed
+    assert "python" in results[0].message.lower()
+    assert "poetry.lock" in results[0].message
+
+
+def test_check_lock_file_javascript(tmp_path: Path) -> None:
+    """Test detecting JavaScript lock file."""
+    (tmp_path / "package-lock.json").touch()
+
+    pillar = BuildPillar()
+    results = pillar._check_lock_file_exists(tmp_path, {"javascript"})
+
+    assert len(results) == 1
+    assert results[0].passed
+
+
+def test_check_lock_file_rust(tmp_path: Path) -> None:
+    """Test detecting Rust lock file."""
+    (tmp_path / "Cargo.lock").touch()
+
+    pillar = BuildPillar()
+    results = pillar._check_lock_file_exists(tmp_path, {"rust"})
+
+    assert len(results) == 1
+    assert results[0].passed
+
+
+def test_check_lock_file_go(tmp_path: Path) -> None:
+    """Test detecting Go lock file."""
+    (tmp_path / "go.sum").touch()
+
+    pillar = BuildPillar()
+    results = pillar._check_lock_file_exists(tmp_path, {"go"})
+
+    assert len(results) == 1
+    assert results[0].passed
+
+
+def test_check_lock_file_missing(tmp_path: Path) -> None:
+    """Test lock file check fails when missing."""
+    pillar = BuildPillar()
+    results = pillar._check_lock_file_exists(tmp_path, {"python"})
+
+    assert len(results) == 1
+    assert not results[0].passed

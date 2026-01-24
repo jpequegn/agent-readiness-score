@@ -98,3 +98,51 @@ class BuildPillar(Pillar):
                 )
 
         return results
+
+    def _check_lock_file_exists(
+        self, target_dir: Path, languages: set[str]
+    ) -> list[CheckResult]:
+        """Check if each language has a lock file for reproducibility.
+
+        Args:
+            target_dir: Directory to scan
+            languages: Set of detected languages
+
+        Returns:
+            List of CheckResults, one per language
+        """
+        results = []
+
+        lock_files = {
+            "python": ["poetry.lock", "Pipfile.lock", "requirements.lock"],
+            "javascript": ["package-lock.json", "yarn.lock", "pnpm-lock.yaml"],
+            "rust": ["Cargo.lock"],
+            "go": ["go.sum"],
+        }
+
+        for lang in sorted(languages):
+            files = lock_files.get(lang, [])
+            found_files = [f for f in files if (target_dir / f).exists()]
+
+            if found_files:
+                results.append(
+                    CheckResult(
+                        name=f"{lang.capitalize()} lock file",
+                        passed=True,
+                        message=f"{lang.capitalize()} lock file found: {', '.join(found_files)}",
+                        severity=Severity.RECOMMENDED,
+                        level=2,
+                    )
+                )
+            else:
+                results.append(
+                    CheckResult(
+                        name=f"{lang.capitalize()} lock file",
+                        passed=False,
+                        message=f"No {lang} lock file found (expected: {', '.join(files)})",
+                        severity=Severity.RECOMMENDED,
+                        level=2,
+                    )
+                )
+
+        return results
