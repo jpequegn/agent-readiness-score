@@ -372,3 +372,11 @@ def test_evaluate_minimal_setup(tmp_path: Path) -> None:
     # Should have checks for JavaScript
     assert len(results) >= 1
     assert any("javascript" in r.name.lower() for r in results)
+
+
+def test_build_pillar_importable() -> None:
+    """Test BuildPillar can be imported from pillars package."""
+    from agent_readiness.pillars import BuildPillar
+
+    pillar = BuildPillar()
+    assert pillar.name == "Build System"
