@@ -1,7 +1,7 @@
 """Style & Validation pillar implementation."""
 
 from pathlib import Path
-from agent_readiness.models import CheckResult
+from agent_readiness.models import CheckResult, Severity
 from agent_readiness.pillar import Pillar
 
 
@@ -55,3 +55,43 @@ class StylePillar(Pillar):
                 languages.add(lang)
 
         return languages
+
+    def _check_any_linter_config(self, target_dir: Path, languages: set[str]) -> CheckResult:
+        """Check if any linter configuration exists."""
+        linter_configs = {
+            "python": ["ruff.toml", ".ruff.toml", ".flake8", ".pylintrc", "pylint.rc", "pyproject.toml"],
+            "javascript": [".eslintrc", ".eslintrc.json", ".eslintrc.js", ".eslintrc.yml", ".eslintrc.yaml", "eslint.config.js"],
+            "go": [".golangci.yml", ".golangci.yaml"],
+            "rust": ["rustfmt.toml", ".rustfmt.toml"],
+        }
+
+        found_configs = []
+        for lang in languages:
+            if lang not in linter_configs:
+                continue
+            for config_file in linter_configs[lang]:
+                config_path = target_dir / config_file
+                if config_path.exists():
+                    if config_file == "pyproject.toml":
+                        content = config_path.read_text()
+                        if "[tool.ruff]" in content or "[tool.pylint]" in content or "[tool.flake8]" in content:
+                            found_configs.append(config_file)
+                            break
+                    else:
+                        found_configs.append(config_file)
+                        break
+
+        if found_configs:
+            return CheckResult(
+                name="Has linter configuration",
+                passed=True,
+                message=f"Found linter config: {', '.join(found_configs)}",
+                severity=Severity.INFO,
+            )
+        else:
+            return CheckResult(
+                name="Has linter configuration",
+                passed=False,
+                message="No linter configuration found for detected languages",
+                severity=Severity.WARNING,
+            )

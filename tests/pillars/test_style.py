@@ -41,3 +41,51 @@ def test_detect_languages_multiple(tmp_path: Path) -> None:
     assert "javascript" in languages
     assert "go" in languages
     assert len(languages) == 3
+
+
+def test_check_any_linter_config_python_ruff(tmp_path: Path) -> None:
+    """Test detecting ruff.toml for Python."""
+    (tmp_path / "main.py").touch()
+    (tmp_path / "ruff.toml").touch()
+
+    pillar = StylePillar()
+    result = pillar._check_any_linter_config(tmp_path, {"python"})
+
+    assert result.passed
+    assert "ruff.toml" in result.message
+
+
+def test_check_any_linter_config_python_pyproject(tmp_path: Path) -> None:
+    """Test detecting pyproject.toml with ruff config."""
+    (tmp_path / "main.py").touch()
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text("[tool.ruff]\nline-length = 100\n")
+
+    pillar = StylePillar()
+    result = pillar._check_any_linter_config(tmp_path, {"python"})
+
+    assert result.passed
+    assert "pyproject.toml" in result.message
+
+
+def test_check_any_linter_config_javascript_eslint(tmp_path: Path) -> None:
+    """Test detecting .eslintrc for JavaScript."""
+    (tmp_path / "app.js").touch()
+    (tmp_path / ".eslintrc.json").touch()
+
+    pillar = StylePillar()
+    result = pillar._check_any_linter_config(tmp_path, {"javascript"})
+
+    assert result.passed
+    assert ".eslintrc" in result.message
+
+
+def test_check_any_linter_config_not_found(tmp_path: Path) -> None:
+    """Test when no linter config is found."""
+    (tmp_path / "main.py").touch()
+
+    pillar = StylePillar()
+    result = pillar._check_any_linter_config(tmp_path, {"python"})
+
+    assert not result.passed
+    assert "No linter" in result.message
