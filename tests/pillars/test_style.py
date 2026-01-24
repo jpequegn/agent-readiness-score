@@ -276,3 +276,77 @@ def test_evaluate_minimal_setup(tmp_path: Path) -> None:
     # Most checks should fail (except possibly go's built-in formatter)
     failed_checks = [result for result in results if not result.passed]
     assert len(failed_checks) >= 4
+
+
+def test_evaluate_multi_language_project(tmp_path: Path) -> None:
+    """Test evaluate() with multiple languages."""
+    # Create Python files
+    (tmp_path / "backend.py").touch()
+
+    # Create JavaScript files
+    (tmp_path / "frontend.js").touch()
+
+    # Create Go files
+    (tmp_path / "service.go").touch()
+
+    # Create configs for all languages
+    (tmp_path / "ruff.toml").touch()
+    (tmp_path / ".eslintrc.json").touch()
+
+    # Formatter configs
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text("[tool.black]\nline-length = 100\n")
+    (tmp_path / ".prettierrc").touch()
+
+    pillar = StylePillar()
+    results = pillar.evaluate(tmp_path)
+
+    # Should detect multiple languages
+    linter_result = [r for r in results if r.name == "Has linter configuration"][0]
+    assert linter_result.passed
+    assert "ruff.toml" in linter_result.message or ".eslintrc" in linter_result.message
+
+    formatter_result = [r for r in results if r.name == "Has formatter configuration"][0]
+    assert formatter_result.passed
+    # Should find either Python, JS, or Go formatter
+    assert any(x in formatter_result.message.lower() for x in ["pyproject.toml", ".prettierrc", "gofmt"])
+
+
+def test_evaluate_no_languages_detected(tmp_path: Path) -> None:
+    """Test evaluate() when no supported languages are detected."""
+    # Create a text file only
+    (tmp_path / "README.md").touch()
+
+    pillar = StylePillar()
+    results = pillar.evaluate(tmp_path)
+
+    # Should still run checks but likely fail
+    assert len(results) == 5
+
+    linter_result = [r for r in results if r.name == "Has linter configuration"][0]
+    assert not linter_result.passed
+
+
+def test_evaluate_pyproject_with_multiple_tools(tmp_path: Path) -> None:
+    """Test pyproject.toml with both linter and formatter configs."""
+    (tmp_path / "main.py").touch()
+
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text("""
+[tool.ruff]
+line-length = 100
+
+[tool.black]
+line-length = 100
+""")
+
+    pillar = StylePillar()
+    results = pillar.evaluate(tmp_path)
+
+    linter_result = [r for r in results if r.name == "Has linter configuration"][0]
+    assert linter_result.passed
+    assert "pyproject.toml" in linter_result.message
+
+    formatter_result = [r for r in results if r.name == "Has formatter configuration"][0]
+    assert formatter_result.passed
+    assert "pyproject.toml" in formatter_result.message
