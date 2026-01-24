@@ -136,3 +136,23 @@ def test_check_formatter_config_not_found(tmp_path: Path) -> None:
 
     assert not result.passed
     assert "No formatter" in result.message
+
+
+def test_check_precommit_hooks_found(tmp_path: Path) -> None:
+    """Test detecting .pre-commit-config.yaml."""
+    (tmp_path / ".pre-commit-config.yaml").write_text("repos:\n  - repo: https://github.com/psf/black\n")
+
+    pillar = StylePillar()
+    result = pillar._check_precommit_hooks(tmp_path)
+
+    assert result.passed
+    assert ".pre-commit-config.yaml" in result.message
+
+
+def test_check_precommit_hooks_not_found(tmp_path: Path) -> None:
+    """Test when no pre-commit config is found."""
+    pillar = StylePillar()
+    result = pillar._check_precommit_hooks(tmp_path)
+
+    assert not result.passed
+    assert "No pre-commit" in result.message

@@ -141,3 +141,22 @@ class StylePillar(Pillar):
                 message="No formatter configuration found for detected languages",
                 severity=Severity.WARNING,
             )
+
+    def _check_precommit_hooks(self, target_dir: Path) -> CheckResult:
+        """Check if pre-commit hooks are configured."""
+        precommit_config = target_dir / ".pre-commit-config.yaml"
+
+        if precommit_config.exists():
+            return CheckResult(
+                name="Has pre-commit hooks",
+                passed=True,
+                message="Found .pre-commit-config.yaml",
+                severity=Severity.INFO,
+            )
+        else:
+            return CheckResult(
+                name="Has pre-commit hooks",
+                passed=False,
+                message="No pre-commit configuration found",
+                severity=Severity.WARNING,
+            )
