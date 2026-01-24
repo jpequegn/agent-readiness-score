@@ -17,7 +17,33 @@ class BuildPillar(Pillar):
 
     def evaluate(self, target_dir: Path) -> list[CheckResult]:
         """Evaluate the target directory for build system checks."""
-        return []
+        results = []
+
+        # Detect languages first
+        languages = self._detect_languages(target_dir)
+
+        # Level 1: Package manager exists (per-language)
+        results.extend(self._check_package_manager_exists(target_dir, languages))
+
+        # Level 2: Lock file exists (per-language)
+        results.extend(self._check_lock_file_exists(target_dir, languages))
+
+        # Level 3: Build script exists (per-language)
+        results.extend(self._check_build_script_exists(target_dir, languages))
+
+        # Level 4: Build caching (repository-wide)
+        results.append(self._check_build_caching(target_dir))
+
+        # Level 4: Containerization (repository-wide)
+        results.append(self._check_containerization(target_dir))
+
+        # Level 5: Dependency automation (repository-wide)
+        results.append(self._check_dependency_automation(target_dir))
+
+        # Level 5: Reproducible builds (repository-wide)
+        results.append(self._check_reproducible_builds(target_dir, languages))
+
+        return results
 
     def _detect_languages(self, target_dir: Path) -> set[str]:
         """Detect programming languages by package manager files.

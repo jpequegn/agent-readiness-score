@@ -342,3 +342,33 @@ def test_check_reproducible_builds_missing_lock_files(tmp_path: Path) -> None:
     result = pillar._check_reproducible_builds(tmp_path, {"python"})
 
     assert not result.passed
+
+
+def test_evaluate_full_python_setup(tmp_path: Path) -> None:
+    """Test evaluation of Python project with all features."""
+    (tmp_path / "pyproject.toml").touch()
+    (tmp_path / "poetry.lock").touch()
+    makefile = tmp_path / "Makefile"
+    makefile.write_text("build:\n\tpython -m build\n")
+
+    pillar = BuildPillar()
+    results = pillar.evaluate(tmp_path)
+
+    # Should have: package manager, lock file, build script, caching (fail), containerization (fail),
+    # dependency automation (fail), reproducible builds (partial)
+    assert len(results) >= 3  # At least the per-language checks
+    assert any(r.passed and "package manager" in r.name.lower() for r in results)
+    assert any(r.passed and "lock file" in r.name.lower() for r in results)
+    assert any(r.passed and "build script" in r.name.lower() for r in results)
+
+
+def test_evaluate_minimal_setup(tmp_path: Path) -> None:
+    """Test evaluation of minimal project."""
+    (tmp_path / "package.json").touch()
+
+    pillar = BuildPillar()
+    results = pillar.evaluate(tmp_path)
+
+    # Should have checks for JavaScript
+    assert len(results) >= 1
+    assert any("javascript" in r.name.lower() for r in results)
