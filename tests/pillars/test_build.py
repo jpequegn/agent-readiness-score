@@ -1,5 +1,6 @@
 """Tests for Build System pillar."""
 
+import json
 from pathlib import Path
 
 from agent_readiness.pillars.build import BuildPillar
@@ -182,6 +183,59 @@ def test_check_lock_file_missing(tmp_path: Path) -> None:
     """Test lock file check fails when missing."""
     pillar = BuildPillar()
     results = pillar._check_lock_file_exists(tmp_path, {"python"})
+
+    assert len(results) == 1
+    assert not results[0].passed
+
+
+def test_check_build_script_python_makefile(tmp_path: Path) -> None:
+    """Test detecting Python build via Makefile."""
+    makefile = tmp_path / "Makefile"
+    makefile.write_text("build:\n\tpython -m build\n")
+
+    pillar = BuildPillar()
+    results = pillar._check_build_script_exists(tmp_path, {"python"})
+
+    assert len(results) == 1
+    assert results[0].passed
+
+
+def test_check_build_script_javascript(tmp_path: Path) -> None:
+    """Test detecting JavaScript build script in package.json."""
+    package_json = tmp_path / "package.json"
+    package_json.write_text(json.dumps({"scripts": {"build": "tsc"}}))
+
+    pillar = BuildPillar()
+    results = pillar._check_build_script_exists(tmp_path, {"javascript"})
+
+    assert len(results) == 1
+    assert results[0].passed
+
+
+def test_check_build_script_rust_default(tmp_path: Path) -> None:
+    """Test Rust always passes (cargo build is default)."""
+    pillar = BuildPillar()
+    results = pillar._check_build_script_exists(tmp_path, {"rust"})
+
+    assert len(results) == 1
+    assert results[0].passed
+    assert "cargo build" in results[0].message
+
+
+def test_check_build_script_go_default(tmp_path: Path) -> None:
+    """Test Go always passes (go build is default)."""
+    pillar = BuildPillar()
+    results = pillar._check_build_script_exists(tmp_path, {"go"})
+
+    assert len(results) == 1
+    assert results[0].passed
+    assert "go build" in results[0].message
+
+
+def test_check_build_script_missing(tmp_path: Path) -> None:
+    """Test build script check fails when missing."""
+    pillar = BuildPillar()
+    results = pillar._check_build_script_exists(tmp_path, {"python"})
 
     assert len(results) == 1
     assert not results[0].passed
