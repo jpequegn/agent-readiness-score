@@ -89,3 +89,50 @@ def test_check_any_linter_config_not_found(tmp_path: Path) -> None:
 
     assert not result.passed
     assert "No linter" in result.message
+
+
+def test_check_formatter_config_python_black(tmp_path: Path) -> None:
+    """Test detecting black config in pyproject.toml."""
+    (tmp_path / "main.py").touch()
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text("[tool.black]\nline-length = 100\n")
+
+    pillar = StylePillar()
+    result = pillar._check_formatter_config(tmp_path, {"python"})
+
+    assert result.passed
+    assert "pyproject.toml" in result.message
+
+
+def test_check_formatter_config_javascript_prettier(tmp_path: Path) -> None:
+    """Test detecting .prettierrc for JavaScript."""
+    (tmp_path / "app.js").touch()
+    (tmp_path / ".prettierrc").touch()
+
+    pillar = StylePillar()
+    result = pillar._check_formatter_config(tmp_path, {"javascript"})
+
+    assert result.passed
+    assert ".prettierrc" in result.message
+
+
+def test_check_formatter_config_go_gofmt(tmp_path: Path) -> None:
+    """Test Go (gofmt is built-in, always passes)."""
+    (tmp_path / "main.go").touch()
+
+    pillar = StylePillar()
+    result = pillar._check_formatter_config(tmp_path, {"go"})
+
+    assert result.passed
+    assert "gofmt" in result.message.lower()
+
+
+def test_check_formatter_config_not_found(tmp_path: Path) -> None:
+    """Test when no formatter config is found."""
+    (tmp_path / "main.py").touch()
+
+    pillar = StylePillar()
+    result = pillar._check_formatter_config(tmp_path, {"python"})
+
+    assert not result.passed
+    assert "No formatter" in result.message

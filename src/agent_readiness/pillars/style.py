@@ -95,3 +95,49 @@ class StylePillar(Pillar):
                 message="No linter configuration found for detected languages",
                 severity=Severity.WARNING,
             )
+
+    def _check_formatter_config(self, target_dir: Path, languages: set[str]) -> CheckResult:
+        """Check if formatter configuration exists."""
+        formatter_configs = {
+            "python": ["pyproject.toml", ".black", "black.toml"],
+            "javascript": [".prettierrc", ".prettierrc.json", ".prettierrc.js", ".prettierrc.yml", ".prettierrc.yaml", "prettier.config.js"],
+            "go": ["__builtin__"],  # gofmt is built-in
+            "rust": ["rustfmt.toml", ".rustfmt.toml"],
+        }
+
+        found_configs = []
+        for lang in languages:
+            if lang not in formatter_configs:
+                continue
+
+            # Special case for Go - gofmt is built-in
+            if lang == "go":
+                found_configs.append("gofmt (built-in)")
+                continue
+
+            for config_file in formatter_configs[lang]:
+                config_path = target_dir / config_file
+                if config_path.exists():
+                    if config_file == "pyproject.toml":
+                        content = config_path.read_text()
+                        if "[tool.black]" in content or "[tool.ruff.format]" in content:
+                            found_configs.append(config_file)
+                            break
+                    else:
+                        found_configs.append(config_file)
+                        break
+
+        if found_configs:
+            return CheckResult(
+                name="Has formatter configuration",
+                passed=True,
+                message=f"Found formatter config: {', '.join(found_configs)}",
+                severity=Severity.INFO,
+            )
+        else:
+            return CheckResult(
+                name="Has formatter configuration",
+                passed=False,
+                message="No formatter configuration found for detected languages",
+                severity=Severity.WARNING,
+            )
