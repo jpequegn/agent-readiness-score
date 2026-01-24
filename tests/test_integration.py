@@ -1,8 +1,9 @@
 """Integration tests for scanner and pillars."""
 
 from pathlib import Path
-from agent_readiness.scanner import Scanner
+
 from agent_readiness.pillars import StylePillar
+from agent_readiness.scanner import Scanner
 
 
 def test_scanner_with_style_pillar(tmp_path: Path) -> None:

@@ -102,7 +102,9 @@ class ScanResult:
                 "total_checks": total_checks,
                 "passed": passed_checks,
                 "failed": failed_checks,
-                "pass_rate": f"{(passed_checks / total_checks * 100) if total_checks > 0 else 0:.1f}%",
+                "pass_rate": (
+                    f"{(passed_checks / total_checks * 100) if total_checks > 0 else 0:.1f}%"
+                ),
             },
             "pillars": [pillar.to_dict() for pillar in self.pillars],
         }
