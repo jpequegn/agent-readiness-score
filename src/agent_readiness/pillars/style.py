@@ -191,3 +191,40 @@ class StylePillar(Pillar):
                 message="No CI integration found for style checks",
                 severity=Severity.WARNING,
             )
+
+    def _check_style_guide_docs(self, target_dir: Path) -> CheckResult:
+        """Check if style guide documentation exists."""
+        style_guide_files = [
+            "STYLE_GUIDE.md",
+            "STYLEGUIDE.md",
+            "docs/STYLE_GUIDE.md",
+            "docs/style-guide.md",
+            "CONTRIBUTING.md",
+        ]
+
+        found_docs = []
+        for doc_file in style_guide_files:
+            doc_path = target_dir / doc_file
+            if doc_path.exists():
+                # For CONTRIBUTING.md, check if it has style guide content
+                if "CONTRIBUTING" in doc_file:
+                    content = doc_path.read_text().lower()
+                    if "style" in content or "format" in content or "lint" in content:
+                        found_docs.append(doc_file)
+                else:
+                    found_docs.append(doc_file)
+
+        if found_docs:
+            return CheckResult(
+                name="Has style guide documentation",
+                passed=True,
+                message=f"Found style guide documentation: {', '.join(found_docs)}",
+                severity=Severity.INFO,
+            )
+        else:
+            return CheckResult(
+                name="Has style guide documentation",
+                passed=False,
+                message="No style guide documentation found",
+                severity=Severity.WARNING,
+            )

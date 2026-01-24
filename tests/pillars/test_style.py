@@ -189,3 +189,34 @@ def test_check_ci_integration_not_found(tmp_path: Path) -> None:
 
     assert not result.passed
     assert "No CI" in result.message
+
+
+def test_check_style_guide_docs_found(tmp_path: Path) -> None:
+    """Test detecting style guide documentation."""
+    (tmp_path / "STYLE_GUIDE.md").write_text("# Style Guide\n\nOur coding standards.\n")
+
+    pillar = StylePillar()
+    result = pillar._check_style_guide_docs(tmp_path)
+
+    assert result.passed
+    assert "STYLE_GUIDE.md" in result.message
+
+
+def test_check_style_guide_docs_in_contributing(tmp_path: Path) -> None:
+    """Test detecting style guide in CONTRIBUTING.md."""
+    (tmp_path / "CONTRIBUTING.md").write_text("# Contributing\n\n## Code Style\n\nWe use black.\n")
+
+    pillar = StylePillar()
+    result = pillar._check_style_guide_docs(tmp_path)
+
+    assert result.passed
+    assert "CONTRIBUTING.md" in result.message
+
+
+def test_check_style_guide_docs_not_found(tmp_path: Path) -> None:
+    """Test when no style guide documentation is found."""
+    pillar = StylePillar()
+    result = pillar._check_style_guide_docs(tmp_path)
+
+    assert not result.passed
+    assert "No style guide" in result.message
