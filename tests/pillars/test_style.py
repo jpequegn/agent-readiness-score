@@ -156,3 +156,36 @@ def test_check_precommit_hooks_not_found(tmp_path: Path) -> None:
 
     assert not result.passed
     assert "No pre-commit" in result.message
+
+
+def test_check_ci_integration_github_actions(tmp_path: Path) -> None:
+    """Test detecting GitHub Actions workflow."""
+    workflows_dir = tmp_path / ".github" / "workflows"
+    workflows_dir.mkdir(parents=True)
+    (workflows_dir / "lint.yml").write_text("name: Lint\non: push\njobs:\n  lint:\n    runs-on: ubuntu-latest\n")
+
+    pillar = StylePillar()
+    result = pillar._check_ci_integration(tmp_path)
+
+    assert result.passed
+    assert "GitHub Actions" in result.message
+
+
+def test_check_ci_integration_gitlab_ci(tmp_path: Path) -> None:
+    """Test detecting GitLab CI."""
+    (tmp_path / ".gitlab-ci.yml").write_text("lint:\n  script:\n    - ruff check .\n")
+
+    pillar = StylePillar()
+    result = pillar._check_ci_integration(tmp_path)
+
+    assert result.passed
+    assert "GitLab CI" in result.message
+
+
+def test_check_ci_integration_not_found(tmp_path: Path) -> None:
+    """Test when no CI integration is found."""
+    pillar = StylePillar()
+    result = pillar._check_ci_integration(tmp_path)
+
+    assert not result.passed
+    assert "No CI" in result.message

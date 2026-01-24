@@ -160,3 +160,34 @@ class StylePillar(Pillar):
                 message="No pre-commit configuration found",
                 severity=Severity.WARNING,
             )
+
+    def _check_ci_integration(self, target_dir: Path) -> CheckResult:
+        """Check if CI integration for linting/formatting exists."""
+        ci_configs = [
+            (".github/workflows", "GitHub Actions"),
+            (".gitlab-ci.yml", "GitLab CI"),
+            (".circleci/config.yml", "CircleCI"),
+            ("azure-pipelines.yml", "Azure Pipelines"),
+            (".travis.yml", "Travis CI"),
+        ]
+
+        found_ci = []
+        for config_path, ci_name in ci_configs:
+            full_path = target_dir / config_path
+            if full_path.exists():
+                found_ci.append(ci_name)
+
+        if found_ci:
+            return CheckResult(
+                name="Has CI integration",
+                passed=True,
+                message=f"Found CI configuration: {', '.join(found_ci)}",
+                severity=Severity.INFO,
+            )
+        else:
+            return CheckResult(
+                name="Has CI integration",
+                passed=False,
+                message="No CI integration found for style checks",
+                severity=Severity.WARNING,
+            )
