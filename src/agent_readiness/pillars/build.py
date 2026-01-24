@@ -263,3 +263,103 @@ class BuildPillar(Pillar):
                 )
 
         return results
+
+    def _check_build_caching(self, target_dir: Path) -> CheckResult:
+        """Check if build caching is configured (repository-wide).
+
+        Args:
+            target_dir: Directory to scan
+
+        Returns:
+            Single CheckResult for the repository
+        """
+        found = []
+
+        # Check GitHub Actions
+        gh_workflows = target_dir / ".github" / "workflows"
+        if gh_workflows.exists():
+            for workflow_file in gh_workflows.glob("*.yml"):
+                try:
+                    content = workflow_file.read_text(encoding="utf-8", errors="ignore")
+                    if "actions/cache" in content or "cache:" in content:
+                        found.append(f"GitHub Actions ({workflow_file.name})")
+                        break
+                except Exception:
+                    pass
+
+        # Check GitLab CI
+        gitlab_ci = target_dir / ".gitlab-ci.yml"
+        if gitlab_ci.exists():
+            try:
+                content = gitlab_ci.read_text(encoding="utf-8", errors="ignore")
+                if "cache:" in content:
+                    found.append("GitLab CI")
+            except Exception:
+                pass
+
+        # Check CircleCI
+        circleci_config = target_dir / ".circleci" / "config.yml"
+        if circleci_config.exists():
+            try:
+                content = circleci_config.read_text(encoding="utf-8", errors="ignore")
+                if "save_cache" in content or "restore_cache" in content:
+                    found.append("CircleCI")
+            except Exception:
+                pass
+
+        if found:
+            return CheckResult(
+                name="Build caching",
+                passed=True,
+                message=f"Build cache configured in {', '.join(found)}",
+                severity=Severity.OPTIONAL,
+                level=4,
+            )
+        else:
+            return CheckResult(
+                name="Build caching",
+                passed=False,
+                message="No build cache detected in CI configuration",
+                severity=Severity.OPTIONAL,
+                level=4,
+            )
+
+    def _check_containerization(self, target_dir: Path) -> CheckResult:
+        """Check if containerization is configured (repository-wide).
+
+        Args:
+            target_dir: Directory to scan
+
+        Returns:
+            Single CheckResult for the repository
+        """
+        found = []
+
+        if (target_dir / "Dockerfile").exists():
+            found.append("Dockerfile")
+
+        if (target_dir / "Containerfile").exists():
+            found.append("Containerfile")
+
+        if (target_dir / ".devcontainer" / "devcontainer.json").exists():
+            found.append("devcontainer")
+
+        if (target_dir / "docker-compose.yml").exists():
+            found.append("docker-compose.yml")
+
+        if found:
+            return CheckResult(
+                name="Containerization",
+                passed=True,
+                message=f"Found {', '.join(found)}",
+                severity=Severity.OPTIONAL,
+                level=4,
+            )
+        else:
+            return CheckResult(
+                name="Containerization",
+                passed=False,
+                message="No containerization configuration found",
+                severity=Severity.OPTIONAL,
+                level=4,
+            )

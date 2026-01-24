@@ -239,3 +239,54 @@ def test_check_build_script_missing(tmp_path: Path) -> None:
 
     assert len(results) == 1
     assert not results[0].passed
+
+
+def test_check_build_caching_github_actions(tmp_path: Path) -> None:
+    """Test detecting build caching in GitHub Actions."""
+    (tmp_path / ".github" / "workflows").mkdir(parents=True)
+    workflow = tmp_path / ".github" / "workflows" / "ci.yml"
+    workflow.write_text("- uses: actions/cache@v3\n")
+
+    pillar = BuildPillar()
+    result = pillar._check_build_caching(tmp_path)
+
+    assert result.passed
+    assert "cache" in result.message.lower()
+
+
+def test_check_build_caching_not_found(tmp_path: Path) -> None:
+    """Test build caching check fails when not configured."""
+    pillar = BuildPillar()
+    result = pillar._check_build_caching(tmp_path)
+
+    assert not result.passed
+
+
+def test_check_containerization_dockerfile(tmp_path: Path) -> None:
+    """Test detecting Dockerfile."""
+    (tmp_path / "Dockerfile").touch()
+
+    pillar = BuildPillar()
+    result = pillar._check_containerization(tmp_path)
+
+    assert result.passed
+    assert "Dockerfile" in result.message
+
+
+def test_check_containerization_devcontainer(tmp_path: Path) -> None:
+    """Test detecting devcontainer."""
+    (tmp_path / ".devcontainer").mkdir()
+    (tmp_path / ".devcontainer" / "devcontainer.json").touch()
+
+    pillar = BuildPillar()
+    result = pillar._check_containerization(tmp_path)
+
+    assert result.passed
+
+
+def test_check_containerization_not_found(tmp_path: Path) -> None:
+    """Test containerization check fails when not configured."""
+    pillar = BuildPillar()
+    result = pillar._check_containerization(tmp_path)
+
+    assert not result.passed
