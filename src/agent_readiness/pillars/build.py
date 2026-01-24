@@ -114,11 +114,12 @@ class BuildPillar(Pillar):
                     )
                 )
             else:
+                expected = ', '.join(files)
                 results.append(
                     CheckResult(
                         name=f"{lang.capitalize()} package manager",
                         passed=False,
-                        message=f"No {lang} package manager file found (expected: {', '.join(files)})",
+                        message=f"No {lang} package manager file found (expected: {expected})",
                         severity=Severity.REQUIRED,
                         level=1,
                     )
@@ -224,7 +225,10 @@ class BuildPillar(Pillar):
                         CheckResult(
                             name="Python build script",
                             passed=False,
-                            message="No build script found (expected Makefile or [tool.poetry.scripts])",
+                            message=(
+                                "No build script found "
+                                "(expected Makefile or [tool.poetry.scripts])"
+                            ),
                             severity=Severity.RECOMMENDED,
                             level=3,
                         )
@@ -258,7 +262,10 @@ class BuildPillar(Pillar):
                         CheckResult(
                             name="JavaScript build script",
                             passed=False,
-                            message='No build script found (expected "build" in package.json scripts)',
+                            message=(
+                                'No build script found '
+                                '(expected "build" in package.json scripts)'
+                            ),
                             severity=Severity.RECOMMENDED,
                             level=3,
                         )

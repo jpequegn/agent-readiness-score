@@ -354,8 +354,8 @@ def test_evaluate_full_python_setup(tmp_path: Path) -> None:
     pillar = BuildPillar()
     results = pillar.evaluate(tmp_path)
 
-    # Should have: package manager, lock file, build script, caching (fail), containerization (fail),
-    # dependency automation (fail), reproducible builds (partial)
+    # Should have: package manager, lock file, build script, caching (fail),
+    # containerization (fail), dependency automation (fail), reproducible builds (partial)
     assert len(results) >= 3  # At least the per-language checks
     assert any(r.passed and "package manager" in r.name.lower() for r in results)
     assert any(r.passed and "lock file" in r.name.lower() for r in results)
