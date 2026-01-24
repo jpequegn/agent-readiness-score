@@ -220,3 +220,59 @@ def test_check_style_guide_docs_not_found(tmp_path: Path) -> None:
 
     assert not result.passed
     assert "No style guide" in result.message
+
+
+def test_evaluate_full_python_setup(tmp_path: Path) -> None:
+    """Test evaluate() with a complete Python project setup."""
+    # Create Python files
+    (tmp_path / "main.py").touch()
+
+    # Create linter config
+    (tmp_path / "ruff.toml").touch()
+
+    # Create formatter config
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text("[tool.black]\nline-length = 100\n")
+
+    # Create pre-commit config
+    (tmp_path / ".pre-commit-config.yaml").touch()
+
+    # Create CI config
+    workflows_dir = tmp_path / ".github" / "workflows"
+    workflows_dir.mkdir(parents=True)
+    (workflows_dir / "lint.yml").touch()
+
+    # Create style guide
+    (tmp_path / "STYLE_GUIDE.md").touch()
+
+    pillar = StylePillar()
+    results = pillar.evaluate(tmp_path)
+
+    # Should have 5 checks (one for each level)
+    assert len(results) == 5
+
+    # All checks should pass
+    assert all(result.passed for result in results)
+
+    # Verify check names
+    check_names = [result.name for result in results]
+    assert "Has linter configuration" in check_names
+    assert "Has formatter configuration" in check_names
+    assert "Has pre-commit hooks" in check_names
+    assert "Has CI integration" in check_names
+    assert "Has style guide documentation" in check_names
+
+
+def test_evaluate_minimal_setup(tmp_path: Path) -> None:
+    """Test evaluate() with minimal setup (only Python files)."""
+    (tmp_path / "main.py").touch()
+
+    pillar = StylePillar()
+    results = pillar.evaluate(tmp_path)
+
+    # Should still have 5 checks
+    assert len(results) == 5
+
+    # Most checks should fail (except possibly go's built-in formatter)
+    failed_checks = [result for result in results if not result.passed]
+    assert len(failed_checks) >= 4

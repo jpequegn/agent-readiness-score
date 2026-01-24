@@ -15,7 +15,27 @@ class StylePillar(Pillar):
 
     def evaluate(self, target_dir: Path) -> list[CheckResult]:
         """Evaluate the target directory for style and validation checks."""
-        return []
+        results = []
+
+        # Detect languages first
+        languages = self._detect_languages(target_dir)
+
+        # Level 1: Check for any linter configuration
+        results.append(self._check_any_linter_config(target_dir, languages))
+
+        # Level 2: Check for formatter configuration
+        results.append(self._check_formatter_config(target_dir, languages))
+
+        # Level 3: Check for pre-commit hooks
+        results.append(self._check_precommit_hooks(target_dir))
+
+        # Level 4: Check for CI integration
+        results.append(self._check_ci_integration(target_dir))
+
+        # Level 5: Check for style guide documentation
+        results.append(self._check_style_guide_docs(target_dir))
+
+        return results
 
     def _detect_languages(self, target_dir: Path) -> set[str]:
         """Detect programming languages in the repository.
