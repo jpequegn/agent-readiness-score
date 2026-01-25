@@ -12,6 +12,10 @@ class Severity(Enum):
     WARNING = "warning"
     ERROR = "error"
     CRITICAL = "critical"
+    # Build pillar severity levels
+    REQUIRED = "required"
+    RECOMMENDED = "recommended"
+    OPTIONAL = "optional"
 
 
 @dataclass
@@ -23,6 +27,7 @@ class CheckResult:
         passed: Whether the check passed
         message: Explanation of the result
         severity: Severity level if the check failed
+        level: Maturity level (1-5) this check belongs to
         metadata: Additional contextual information
     """
 
@@ -30,6 +35,7 @@ class CheckResult:
     passed: bool
     message: str
     severity: Severity = Severity.INFO
+    level: int = 1
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -39,6 +45,7 @@ class CheckResult:
             "passed": self.passed,
             "message": self.message,
             "severity": self.severity.value,
+            "level": self.level,
             "metadata": self.metadata,
         }
 

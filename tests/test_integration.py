@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from agent_readiness.pillars import StylePillar
+from agent_readiness.pillars import BuildPillar, StylePillar
 from agent_readiness.scanner import Scanner
 
 
@@ -33,4 +33,36 @@ def test_scanner_with_style_pillar(tmp_path: Path) -> None:
     assert passed >= 2  # at least linter and formatter
 
     # Overall score should be reasonable
+    assert result.overall_score > 0
+
+
+def test_scanner_with_build_pillar(tmp_path: Path) -> None:
+    """Test Scanner integration with BuildPillar."""
+    # Setup: Python project with some features
+    (tmp_path / "pyproject.toml").touch()
+    (tmp_path / "poetry.lock").touch()
+
+    scanner = Scanner()
+    scanner.register_pillar(BuildPillar())
+    result = scanner.scan(tmp_path)
+
+    assert result.target_directory == str(tmp_path.resolve())
+    assert len(result.pillars) == 1
+    assert result.pillars[0].name == "Build System"
+    assert result.pillars[0].score > 0  # Should have some passing checks
+
+
+def test_scanner_with_multiple_pillars(tmp_path: Path) -> None:
+    """Test Scanner with both StylePillar and BuildPillar."""
+    # Setup: Python project with style and build config
+    (tmp_path / "pyproject.toml").write_text("[tool.ruff]\nline-length = 100\n")
+    (tmp_path / "poetry.lock").touch()
+    (tmp_path / "main.py").touch()
+
+    scanner = Scanner()
+    scanner.register_pillars([StylePillar(), BuildPillar()])
+    result = scanner.scan(tmp_path)
+
+    assert len(result.pillars) == 2
+    assert {p.name for p in result.pillars} == {"Style & Validation", "Build System"}
     assert result.overall_score > 0
