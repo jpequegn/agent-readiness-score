@@ -127,3 +127,26 @@ def test_check_test_directory_structure_scattered(tmp_path: Path) -> None:
     result = pillar._check_test_directory_structure(tmp_path)
 
     assert not result.passed
+
+
+def test_check_test_command_documented_found(tmp_path: Path) -> None:
+    """Test command documentation check passes when found."""
+    readme = tmp_path / "README.md"
+    readme.write_text("## Testing\n\nRun tests with:\n```bash\npytest\n```")
+
+    pillar = TestingPillar()
+    result = pillar._check_test_command_documented(tmp_path)
+
+    assert result.passed
+    assert "pytest" in result.message
+
+
+def test_check_test_command_documented_not_found(tmp_path: Path) -> None:
+    """Test command documentation check fails when not found."""
+    readme = tmp_path / "README.md"
+    readme.write_text("# Project\n\nSome content")
+
+    pillar = TestingPillar()
+    result = pillar._check_test_command_documented(tmp_path)
+
+    assert not result.passed

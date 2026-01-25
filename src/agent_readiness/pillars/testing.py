@@ -155,3 +155,54 @@ class TestingPillar(Pillar):
                 severity=Severity.RECOMMENDED,
                 level=2,
             )
+
+    def _check_test_command_documented(self, target_dir: Path) -> CheckResult:
+        """Check if test command is documented in README.
+
+        Args:
+            target_dir: Directory to scan
+
+        Returns:
+            Single CheckResult for the repository
+        """
+        readme_path = target_dir / "README.md"
+        if not readme_path.exists():
+            return CheckResult(
+                name="Test command documented",
+                passed=False,
+                message="No README.md found",
+                severity=Severity.RECOMMENDED,
+                level=2,
+            )
+
+        try:
+            content = readme_path.read_text(encoding="utf-8", errors="ignore").lower()
+        except Exception:
+            return CheckResult(
+                name="Test command documented",
+                passed=False,
+                message="Could not read README.md",
+                severity=Severity.RECOMMENDED,
+                level=2,
+            )
+
+        # Look for test commands
+        test_commands = ["pytest", "npm test", "go test", "cargo test", "make test"]
+        found_commands = [cmd for cmd in test_commands if cmd in content]
+
+        if found_commands:
+            return CheckResult(
+                name="Test command documented",
+                passed=True,
+                message=f"Test command documented in README.md: '{found_commands[0]}'",
+                severity=Severity.RECOMMENDED,
+                level=2,
+            )
+        else:
+            return CheckResult(
+                name="Test command documented",
+                passed=False,
+                message="No test command found in README.md",
+                severity=Severity.RECOMMENDED,
+                level=2,
+            )
