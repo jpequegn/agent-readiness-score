@@ -51,6 +51,19 @@ Checks for:
 **Language Support**: Python, JavaScript/TypeScript, Go, Rust
 **CI Detection**: GitHub Actions, GitLab CI, CircleCI, Jenkins, Travis CI
 
+### Pillar 3: Testing (`pillars/testing.py`)
+
+Checks for:
+- **Level 1**: Tests exist (test files and directories found)
+- **Level 2**: Test directory structure, test command documented in README
+- **Level 3**: Tests run in CI, coverage measured, unit tests isolated
+- **Level 4**: Parallel test configuration, coverage threshold >=70%
+- **Level 5**: Tests on every change (pre-commit/CI), flaky test detection, property-based testing
+
+**Language Support**: Python, JavaScript/TypeScript, Go, Rust
+**Check Granularity**: Repository-wide (Levels 1-2) + Per-language (Levels 3-5)
+**Detection Strategy**: Test directory scanning with language inference from file extensions
+
 ## Key Commands
 
 ```bash

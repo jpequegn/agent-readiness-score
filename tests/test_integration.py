@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from agent_readiness.pillars import BuildPillar, StylePillar
+from agent_readiness.pillars import BuildPillar, StylePillar, TestingPillar
 from agent_readiness.scanner import Scanner
 
 
@@ -65,4 +65,48 @@ def test_scanner_with_multiple_pillars(tmp_path: Path) -> None:
 
     assert len(result.pillars) == 2
     assert {p.name for p in result.pillars} == {"Style & Validation", "Build System"}
+    assert result.overall_score > 0
+
+
+def test_scanner_with_testing_pillar(tmp_path: Path) -> None:
+    """Test Scanner integration with TestingPillar."""
+    # Setup: Python project with tests
+    test_dir = tmp_path / "tests"
+    test_dir.mkdir()
+    (test_dir / "test_example.py").touch()
+
+    readme = tmp_path / "README.md"
+    readme.write_text("Run tests: pytest")
+
+    scanner = Scanner()
+    scanner.register_pillar(TestingPillar())
+    result = scanner.scan(tmp_path)
+
+    assert result.target_directory == str(tmp_path.resolve())
+    assert len(result.pillars) == 1
+    assert result.pillars[0].name == "Testing"
+    assert result.pillars[0].score > 0
+
+
+def test_scanner_with_all_three_pillars(tmp_path: Path) -> None:
+    """Test Scanner with Style, Build, and Testing pillars."""
+    # Setup: Python project with style, build, and test infrastructure
+    (tmp_path / "pyproject.toml").write_text("[tool.ruff]\nline-length = 100")
+    (tmp_path / "poetry.lock").touch()
+    (tmp_path / "main.py").touch()
+
+    test_dir = tmp_path / "tests"
+    test_dir.mkdir()
+    (test_dir / "test_main.py").touch()
+
+    scanner = Scanner()
+    scanner.register_pillars([StylePillar(), BuildPillar(), TestingPillar()])
+    result = scanner.scan(tmp_path)
+
+    assert len(result.pillars) == 3
+    assert {p.name for p in result.pillars} == {
+        "Style & Validation",
+        "Build System",
+        "Testing",
+    }
     assert result.overall_score > 0
