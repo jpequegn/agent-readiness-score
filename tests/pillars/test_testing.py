@@ -235,3 +235,30 @@ testpaths = ["tests"]
     assert results[0].name == "Coverage measured (python)"
     assert not results[0].passed
     assert "not configured" in results[0].message.lower()
+
+
+def test_check_unit_tests_isolated_python(tmp_path: Path) -> None:
+    """Test isolation check for Python."""
+    test_dir = tmp_path / "tests"
+    test_dir.mkdir()
+    test_file = test_dir / "test_example.py"
+    test_file.write_text("import pytest\n\n@pytest.fixture\ndef sample():\n    pass")
+
+    pillar = TestingPillar()
+    results = pillar._check_unit_tests_isolated(tmp_path, {"python"})
+
+    assert len(results) == 1
+    assert results[0].passed
+
+
+def test_check_unit_tests_isolated_not_found(tmp_path: Path) -> None:
+    """Test isolation check fails when patterns not found."""
+    test_dir = tmp_path / "tests"
+    test_dir.mkdir()
+    (test_dir / "test_example.py").write_text("def test_basic(): pass")
+
+    pillar = TestingPillar()
+    results = pillar._check_unit_tests_isolated(tmp_path, {"python"})
+
+    assert len(results) == 1
+    assert not results[0].passed

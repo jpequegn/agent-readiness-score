@@ -501,3 +501,195 @@ class TestingPillar(Pillar):
             severity=Severity.RECOMMENDED,
             level=3,
         )
+
+    def _check_unit_tests_isolated(
+        self, target_dir: Path, languages: set
+    ) -> list[CheckResult]:
+        """Check if unit tests use isolation patterns (fixtures, mocks).
+
+        Per-language check for test isolation practices.
+        - Python: Looks for @pytest.fixture or unittest.mock
+        - JavaScript: Looks for jest.mock or vi.mock
+        - Go: Always passes (interface-based isolation)
+        - Rust: Always passes (isolated by default)
+
+        Args:
+            target_dir: Directory to scan
+            languages: Set of languages to check
+
+        Returns:
+            List of CheckResult, one per language
+        """
+        results = []
+
+        for language in sorted(languages):
+            if language == "python":
+                result = self._check_python_isolation(target_dir)
+            elif language == "javascript":
+                result = self._check_javascript_isolation(target_dir)
+            elif language == "go":
+                result = self._check_go_isolation(target_dir)
+            elif language == "rust":
+                result = self._check_rust_isolation(target_dir)
+            else:
+                # Unknown language, skip
+                continue
+
+            results.append(result)
+
+        return results
+
+    def _check_python_isolation(self, target_dir: Path) -> CheckResult:
+        """Check if Python tests use isolation patterns (fixtures, mocks).
+
+        Looks for @pytest.fixture or unittest.mock in test files.
+
+        Args:
+            target_dir: Directory to scan
+
+        Returns:
+            CheckResult for Python isolation
+        """
+        test_info = self._detect_test_infrastructure(target_dir)
+        test_files = test_info["test_files"]["python"]
+
+        if not test_files:
+            return CheckResult(
+                name="Unit tests isolated (python)",
+                passed=False,
+                message="No Python test files found",
+                severity=Severity.RECOMMENDED,
+                level=3,
+            )
+
+        # Sample first 10 files to avoid scanning everything
+        files_to_check = test_files[:10]
+
+        isolation_patterns = ["@pytest.fixture", "unittest.mock", "from unittest import mock"]
+        found_patterns = False
+
+        for test_file in files_to_check:
+            try:
+                content = test_file.read_text(encoding="utf-8", errors="ignore")
+                for pattern in isolation_patterns:
+                    if pattern in content:
+                        found_patterns = True
+                        break
+                if found_patterns:
+                    break
+            except Exception:
+                continue
+
+        if found_patterns:
+            return CheckResult(
+                name="Unit tests isolated (python)",
+                passed=True,
+                message="Python tests use isolation patterns (fixtures/mocks)",
+                severity=Severity.RECOMMENDED,
+                level=3,
+            )
+        else:
+            return CheckResult(
+                name="Unit tests isolated (python)",
+                passed=False,
+                message="Python tests do not use isolation patterns (fixtures/mocks)",
+                severity=Severity.RECOMMENDED,
+                level=3,
+            )
+
+    def _check_javascript_isolation(self, target_dir: Path) -> CheckResult:
+        """Check if JavaScript tests use isolation patterns (mocks).
+
+        Looks for jest.mock or vi.mock in test files.
+
+        Args:
+            target_dir: Directory to scan
+
+        Returns:
+            CheckResult for JavaScript isolation
+        """
+        test_info = self._detect_test_infrastructure(target_dir)
+        test_files = test_info["test_files"]["javascript"]
+
+        if not test_files:
+            return CheckResult(
+                name="Unit tests isolated (javascript)",
+                passed=False,
+                message="No JavaScript test files found",
+                severity=Severity.RECOMMENDED,
+                level=3,
+            )
+
+        # Sample first 10 files to avoid scanning everything
+        files_to_check = test_files[:10]
+
+        isolation_patterns = ["jest.mock", "vi.mock"]
+        found_patterns = False
+
+        for test_file in files_to_check:
+            try:
+                content = test_file.read_text(encoding="utf-8", errors="ignore")
+                for pattern in isolation_patterns:
+                    if pattern in content:
+                        found_patterns = True
+                        break
+                if found_patterns:
+                    break
+            except Exception:
+                continue
+
+        if found_patterns:
+            return CheckResult(
+                name="Unit tests isolated (javascript)",
+                passed=True,
+                message="JavaScript tests use isolation patterns (mocks)",
+                severity=Severity.RECOMMENDED,
+                level=3,
+            )
+        else:
+            return CheckResult(
+                name="Unit tests isolated (javascript)",
+                passed=False,
+                message="JavaScript tests do not use isolation patterns (mocks)",
+                severity=Severity.RECOMMENDED,
+                level=3,
+            )
+
+    def _check_go_isolation(self, target_dir: Path) -> CheckResult:
+        """Check if Go tests use isolation (always passes).
+
+        Go achieves isolation through interfaces and dependency injection,
+        which is implicit in the language design.
+
+        Args:
+            target_dir: Directory to scan
+
+        Returns:
+            CheckResult for Go isolation (always passes)
+        """
+        return CheckResult(
+            name="Unit tests isolated (go)",
+            passed=True,
+            message="Go tests use isolation (interface-based design)",
+            severity=Severity.RECOMMENDED,
+            level=3,
+        )
+
+    def _check_rust_isolation(self, target_dir: Path) -> CheckResult:
+        """Check if Rust tests use isolation (always passes).
+
+        Rust's type system and module system provide isolation by default.
+
+        Args:
+            target_dir: Directory to scan
+
+        Returns:
+            CheckResult for Rust isolation (always passes)
+        """
+        return CheckResult(
+            name="Unit tests isolated (rust)",
+            passed=True,
+            message="Rust tests isolated (built-in isolation)",
+            severity=Severity.RECOMMENDED,
+            level=3,
+        )
