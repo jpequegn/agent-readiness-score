@@ -312,6 +312,14 @@ def test_check_property_based_testing_python(tmp_path: Path) -> None:
     assert results[0].passed
 
 
+def test_testing_pillar_importable() -> None:
+    """Test TestingPillar can be imported from pillars package."""
+    from agent_readiness.pillars import TestingPillar
+
+    pillar = TestingPillar()
+    assert pillar.name == "Testing"
+
+
 def test_evaluate_full_python_setup(tmp_path: Path) -> None:
     """Test evaluation of Python project with full test setup."""
     # Setup test infrastructure
