@@ -73,7 +73,7 @@ Each pillar has its own tracking issue with specific metrics to implement.
 - [x] Core scanning framework
 - [x] Pillar 1: Style & Validation checks
 - [ ] Pillar 2: Build System checks
-- [ ] Pillar 3: Testing checks
+- [x] Pillar 3: Testing checks
 - [ ] Pillar 4: Documentation checks
 - [ ] Pillar 5: Dev Environment checks
 - [ ] Pillar 6: Debugging & Observability checks
