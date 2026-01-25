@@ -101,3 +101,57 @@ class TestingPillar(Pillar):
                 severity=Severity.REQUIRED,
                 level=1,
             )
+
+    def _check_test_directory_structure(self, target_dir: Path) -> CheckResult:
+        """Check if tests are organized in standard directory structure.
+
+        Args:
+            target_dir: Directory to scan
+
+        Returns:
+            Single CheckResult for the repository
+        """
+        test_info = self._detect_test_infrastructure(target_dir)
+        total_files = sum(len(files) for files in test_info["test_files"].values())
+
+        if total_files == 0:
+            return CheckResult(
+                name="Test directory structure",
+                passed=False,
+                message="No tests found to evaluate structure",
+                severity=Severity.RECOMMENDED,
+                level=2,
+            )
+
+        # Count files in standard directories
+        files_in_standard_dirs = 0
+        for test_dir in test_info["test_dirs"]:
+            for lang_files in test_info["test_files"].values():
+                for test_file in lang_files:
+                    try:
+                        test_file.relative_to(test_dir)
+                        files_in_standard_dirs += 1
+                    except ValueError:
+                        pass
+
+        percentage = (files_in_standard_dirs / total_files) * 100 if total_files > 0 else 0
+
+        if percentage >= 50 and len(test_info["test_dirs"]) > 0:
+            return CheckResult(
+                name="Test directory structure",
+                passed=True,
+                message=(
+                    f"Tests organized in standard directories "
+                    f"({files_in_standard_dirs}/{total_files} files)"
+                ),
+                severity=Severity.RECOMMENDED,
+                level=2,
+            )
+        else:
+            return CheckResult(
+                name="Test directory structure",
+                passed=False,
+                message="Tests scattered outside standard directories (tests/, test/, __tests__/)",
+                severity=Severity.RECOMMENDED,
+                level=2,
+            )

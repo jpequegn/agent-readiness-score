@@ -103,3 +103,27 @@ def test_check_tests_exist_not_found(tmp_path: Path) -> None:
 
     assert not result.passed
     assert "No test" in result.message
+
+
+def test_check_test_directory_structure_organized(tmp_path: Path) -> None:
+    """Test directory structure check passes when organized."""
+    test_dir = tmp_path / "tests"
+    test_dir.mkdir()
+    (test_dir / "test_1.py").touch()
+    (test_dir / "test_2.py").touch()
+
+    pillar = TestingPillar()
+    result = pillar._check_test_directory_structure(tmp_path)
+
+    assert result.passed
+    assert result.level == 2
+
+
+def test_check_test_directory_structure_scattered(tmp_path: Path) -> None:
+    """Test directory structure check fails when scattered."""
+    (tmp_path / "test_scattered.py").touch()  # Not in test directory
+
+    pillar = TestingPillar()
+    result = pillar._check_test_directory_structure(tmp_path)
+
+    assert not result.passed
