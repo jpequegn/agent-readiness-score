@@ -16,7 +16,37 @@ class TestingPillar(Pillar):
 
     def evaluate(self, target_dir: Path) -> list[CheckResult]:
         """Evaluate the target directory for testing checks."""
-        return []
+        results = []
+
+        # Detect test infrastructure and languages
+        test_info = self._detect_test_infrastructure(target_dir)
+        languages = test_info["languages"]
+
+        # Level 1: Tests exist
+        results.append(self._check_tests_exist(target_dir))
+
+        # Level 2: Directory structure and documentation
+        results.append(self._check_test_directory_structure(target_dir))
+        results.append(self._check_test_command_documented(target_dir))
+
+        # Level 3: CI integration, coverage config, test isolation
+        results.append(self._check_tests_in_ci(target_dir))
+        if languages:
+            results.extend(self._check_coverage_measured(target_dir))
+            results.extend(self._check_unit_tests_isolated(target_dir, languages))
+
+        # Level 4: Parallel config, coverage threshold
+        if languages:
+            results.extend(self._check_parallel_test_config(target_dir, languages))
+            results.extend(self._check_coverage_threshold(target_dir, languages))
+
+        # Level 5: Automation features
+        results.append(self._check_tests_on_every_change(target_dir))
+        if languages:
+            results.extend(self._check_flaky_test_detection(target_dir, languages))
+            results.extend(self._check_property_based_testing(target_dir, languages))
+
+        return results
 
     def _detect_test_infrastructure(self, target_dir: Path) -> dict:
         """Detect test directories and infer languages.

@@ -310,3 +310,33 @@ def test_check_property_based_testing_python(tmp_path: Path) -> None:
 
     assert len(results) == 1
     assert results[0].passed
+
+
+def test_evaluate_full_python_setup(tmp_path: Path) -> None:
+    """Test evaluation of Python project with full test setup."""
+    # Setup test infrastructure
+    test_dir = tmp_path / "tests"
+    test_dir.mkdir()
+    (test_dir / "test_api.py").write_text("import pytest\n\n@pytest.fixture\ndef sample(): pass")
+    (test_dir / "test_utils.py").touch()
+
+    # Setup documentation
+    readme = tmp_path / "README.md"
+    readme.write_text("## Testing\n\nRun: pytest")
+
+    # Setup CI
+    workflows = tmp_path / ".github" / "workflows"
+    workflows.mkdir(parents=True)
+    (workflows / "ci.yml").write_text("run: pytest")
+
+    # Setup coverage
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text("[tool.pytest.ini_options]\naddopts = \"--cov=src\"\n[tool.coverage.report]\nfail_under = 80")
+
+    pillar = TestingPillar()
+    results = pillar.evaluate(tmp_path)
+
+    # Should have multiple checks across all levels
+    assert len(results) >= 5
+    assert any(r.name == "Tests exist" for r in results)
+    assert any("coverage" in r.name.lower() for r in results)
