@@ -693,3 +693,413 @@ class TestingPillar(Pillar):
             severity=Severity.RECOMMENDED,
             level=3,
         )
+
+    def _check_parallel_test_config(
+        self, target_dir: Path, languages: set[str]
+    ) -> list[CheckResult]:
+        """Check if tests can run in parallel.
+
+        Args:
+            target_dir: Directory to scan
+            languages: Set of detected languages
+
+        Returns:
+            List of CheckResults, one per language
+        """
+        results = []
+
+        for lang in sorted(languages):
+            if lang == "python":
+                # Check for pytest-xdist
+                has_config = False
+                pyproject = target_dir / "pyproject.toml"
+                if pyproject.exists():
+                    try:
+                        content = pyproject.read_text(encoding="utf-8", errors="ignore")
+                        if "pytest-xdist" in content or "-n auto" in content or "-n " in content:
+                            has_config = True
+                    except Exception:
+                        pass
+
+                if has_config:
+                    results.append(
+                        CheckResult(
+                            name="Python parallel tests",
+                            passed=True,
+                            message="Python tests configured for parallel execution (pytest-xdist)",
+                            severity=Severity.OPTIONAL,
+                            level=4,
+                        )
+                    )
+                else:
+                    results.append(
+                        CheckResult(
+                            name="Python parallel tests",
+                            passed=False,
+                            message="No parallel test configuration found for Python",
+                            severity=Severity.OPTIONAL,
+                            level=4,
+                        )
+                    )
+
+            elif lang == "javascript":
+                # Check for jest maxWorkers
+                package_json = target_dir / "package.json"
+                has_config = False
+                if package_json.exists():
+                    try:
+                        import json
+                        data = json.loads(package_json.read_text(encoding="utf-8"))
+                        if "jest" in data and "maxWorkers" in str(data.get("jest", {})):
+                            has_config = True
+                    except Exception:
+                        pass
+
+                if has_config:
+                    results.append(
+                        CheckResult(
+                            name="JavaScript parallel tests",
+                            passed=True,
+                            message="JavaScript tests configured for parallel execution",
+                            severity=Severity.OPTIONAL,
+                            level=4,
+                        )
+                    )
+                else:
+                    results.append(
+                        CheckResult(
+                            name="JavaScript parallel tests",
+                            passed=False,
+                            message="No parallel test configuration found for JavaScript",
+                            severity=Severity.OPTIONAL,
+                            level=4,
+                        )
+                    )
+
+            elif lang == "go":
+                # Go runs tests in parallel by default
+                results.append(
+                    CheckResult(
+                        name="Go parallel tests",
+                        passed=True,
+                        message="Go tests run in parallel by default",
+                        severity=Severity.OPTIONAL,
+                        level=4,
+                    )
+                )
+
+            elif lang == "rust":
+                # Rust runs tests in parallel by default
+                results.append(
+                    CheckResult(
+                        name="Rust parallel tests",
+                        passed=True,
+                        message="Rust tests run in parallel by default",
+                        severity=Severity.OPTIONAL,
+                        level=4,
+                    )
+                )
+
+        return results
+
+    def _check_coverage_threshold(
+        self, target_dir: Path, languages: set[str]
+    ) -> list[CheckResult]:
+        """Check if coverage threshold >=70% is enforced.
+
+        Args:
+            target_dir: Directory to scan
+            languages: Set of detected languages
+
+        Returns:
+            List of CheckResults, one per language
+        """
+        results = []
+
+        for lang in sorted(languages):
+            threshold = None
+            source = None
+
+            if lang == "python":
+                # Check pyproject.toml for coverage threshold
+                pyproject = target_dir / "pyproject.toml"
+                if pyproject.exists():
+                    try:
+                        content = pyproject.read_text(encoding="utf-8", errors="ignore")
+                        if "fail_under" in content:
+                            # Try to extract number
+                            for line in content.split("\n"):
+                                if "fail_under" in line and "=" in line:
+                                    try:
+                                        threshold = int(line.split("=")[1].strip())
+                                        source = "config"
+                                    except ValueError:
+                                        pass
+                    except Exception:
+                        pass
+
+                # Check .coveragerc
+                if threshold is None:
+                    coveragerc = target_dir / ".coveragerc"
+                    if coveragerc.exists():
+                        try:
+                            content = coveragerc.read_text(encoding="utf-8", errors="ignore")
+                            if "fail_under" in content:
+                                for line in content.split("\n"):
+                                    if "fail_under" in line and "=" in line:
+                                        try:
+                                            threshold = int(line.split("=")[1].strip())
+                                            source = "config"
+                                        except ValueError:
+                                            pass
+                        except Exception:
+                            pass
+
+            elif lang == "javascript":
+                # Check package.json for coverage threshold
+                package_json = target_dir / "package.json"
+                if package_json.exists():
+                    try:
+                        import json
+                        data = json.loads(package_json.read_text(encoding="utf-8"))
+                        jest_config = data.get("jest", {})
+                        coverage_threshold = jest_config.get("coverageThreshold", {})
+                        if coverage_threshold:
+                            # Extract global threshold
+                            global_threshold = coverage_threshold.get("global", {})
+                            if global_threshold:
+                                threshold = min(global_threshold.values())
+                                source = "config"
+                    except Exception:
+                        pass
+
+            if threshold is not None and threshold >= 70:
+                results.append(
+                    CheckResult(
+                        name=f"{lang.capitalize()} coverage threshold",
+                        passed=True,
+                        message=(
+                            f"{lang.capitalize()} coverage threshold configured: {threshold}%"
+                        ),
+                        severity=Severity.OPTIONAL,
+                        level=4,
+                    )
+                )
+            else:
+                results.append(
+                    CheckResult(
+                        name=f"{lang.capitalize()} coverage threshold",
+                        passed=False,
+                        message=f"No {lang} coverage threshold >=70% configured",
+                        severity=Severity.OPTIONAL,
+                        level=4,
+                    )
+                )
+
+        return results
+
+    def _check_tests_on_every_change(self, target_dir: Path) -> CheckResult:
+        """Check if tests run automatically on every change.
+
+        Args:
+            target_dir: Directory to scan
+
+        Returns:
+            Single CheckResult for the repository
+        """
+        checks = []
+
+        # Check for pre-commit hooks
+        pre_commit_config = target_dir / ".pre-commit-config.yaml"
+        if pre_commit_config.exists():
+            try:
+                content = pre_commit_config.read_text(encoding="utf-8", errors="ignore")
+                if "pytest" in content or "test" in content:
+                    checks.append("pre-commit hooks")
+            except Exception:
+                pass
+
+        # Check for git hooks
+        git_hooks = target_dir / ".git" / "hooks" / "pre-commit"
+        if git_hooks.exists():
+            try:
+                content = git_hooks.read_text(encoding="utf-8", errors="ignore")
+                if "test" in content or "pytest" in content:
+                    checks.append("git hooks")
+            except Exception:
+                pass
+
+        # Check CI for PR triggers
+        gh_workflows = target_dir / ".github" / "workflows"
+        if gh_workflows.exists():
+            for workflow_file in gh_workflows.glob("*.yml"):
+                try:
+                    content = workflow_file.read_text(encoding="utf-8", errors="ignore")
+                    if "pull_request" in content and "test" in content.lower():
+                        checks.append("CI on PR")
+                        break
+                except Exception:
+                    pass
+
+        if checks:
+            return CheckResult(
+                name="Tests on every change",
+                passed=True,
+                message=f"Tests run automatically: {', '.join(checks)}",
+                severity=Severity.OPTIONAL,
+                level=5,
+            )
+        else:
+            return CheckResult(
+                name="Tests on every change",
+                passed=False,
+                message="Tests do not run automatically on changes",
+                severity=Severity.OPTIONAL,
+                level=5,
+            )
+
+    def _check_flaky_test_detection(
+        self, target_dir: Path, languages: set[str]
+    ) -> list[CheckResult]:
+        """Check if flaky test detection/retry is configured.
+
+        Args:
+            target_dir: Directory to scan
+            languages: Set of detected languages
+
+        Returns:
+            List of CheckResults, one per language
+        """
+        results = []
+
+        for lang in sorted(languages):
+            has_flaky = False
+
+            if lang == "python":
+                # Check for pytest-flaky or pytest-rerunfailures
+                pyproject = target_dir / "pyproject.toml"
+                if pyproject.exists():
+                    try:
+                        content = pyproject.read_text(encoding="utf-8", errors="ignore")
+                        if "pytest-flaky" in content or "pytest-rerunfailures" in content:
+                            has_flaky = True
+                    except Exception:
+                        pass
+
+            elif lang == "javascript":
+                # Check for jest-retry
+                package_json = target_dir / "package.json"
+                if package_json.exists():
+                    try:
+                        content = package_json.read_text(encoding="utf-8", errors="ignore")
+                        if "jest-retry" in content or "@vitest/retry" in content:
+                            has_flaky = True
+                    except Exception:
+                        pass
+
+            if has_flaky:
+                results.append(
+                    CheckResult(
+                        name=f"{lang.capitalize()} flaky test detection",
+                        passed=True,
+                        message=f"{lang.capitalize()} flaky test detection enabled",
+                        severity=Severity.OPTIONAL,
+                        level=5,
+                    )
+                )
+            else:
+                results.append(
+                    CheckResult(
+                        name=f"{lang.capitalize()} flaky test detection",
+                        passed=False,
+                        message=f"No {lang} flaky test detection configured",
+                        severity=Severity.OPTIONAL,
+                        level=5,
+                    )
+                )
+
+        return results
+
+    def _check_property_based_testing(
+        self, target_dir: Path, languages: set[str]
+    ) -> list[CheckResult]:
+        """Check if property-based testing is supported.
+
+        Args:
+            target_dir: Directory to scan
+            languages: Set of detected languages
+
+        Returns:
+            List of CheckResults, one per language
+        """
+        results = []
+
+        for lang in sorted(languages):
+            has_property_testing = False
+
+            if lang == "python":
+                # Check for hypothesis
+                pyproject = target_dir / "pyproject.toml"
+                if pyproject.exists():
+                    try:
+                        content = pyproject.read_text(encoding="utf-8", errors="ignore")
+                        if "hypothesis" in content:
+                            has_property_testing = True
+                    except Exception:
+                        pass
+
+            elif lang == "javascript":
+                # Check for fast-check
+                package_json = target_dir / "package.json"
+                if package_json.exists():
+                    try:
+                        content = package_json.read_text(encoding="utf-8", errors="ignore")
+                        if "fast-check" in content:
+                            has_property_testing = True
+                    except Exception:
+                        pass
+
+            elif lang == "go":
+                # Check for gopter or rapid in go.mod
+                go_mod = target_dir / "go.mod"
+                if go_mod.exists():
+                    try:
+                        content = go_mod.read_text(encoding="utf-8", errors="ignore")
+                        if "gopter" in content or "rapid" in content:
+                            has_property_testing = True
+                    except Exception:
+                        pass
+
+            elif lang == "rust":
+                # Check for proptest or quickcheck
+                cargo_toml = target_dir / "Cargo.toml"
+                if cargo_toml.exists():
+                    try:
+                        content = cargo_toml.read_text(encoding="utf-8", errors="ignore")
+                        if "proptest" in content or "quickcheck" in content:
+                            has_property_testing = True
+                    except Exception:
+                        pass
+
+            if has_property_testing:
+                results.append(
+                    CheckResult(
+                        name=f"{lang.capitalize()} property-based testing",
+                        passed=True,
+                        message=f"{lang.capitalize()} property-based testing supported",
+                        severity=Severity.OPTIONAL,
+                        level=5,
+                    )
+                )
+            else:
+                results.append(
+                    CheckResult(
+                        name=f"{lang.capitalize()} property-based testing",
+                        passed=False,
+                        message=f"No {lang} property-based testing library found",
+                        severity=Severity.OPTIONAL,
+                        level=5,
+                    )
+                )
+
+        return results

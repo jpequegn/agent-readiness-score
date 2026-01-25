@@ -262,3 +262,51 @@ def test_check_unit_tests_isolated_not_found(tmp_path: Path) -> None:
 
     assert len(results) == 1
     assert not results[0].passed
+
+
+# Level 4 tests
+def test_check_parallel_test_config_python(tmp_path: Path) -> None:
+    """Test parallel config check for Python."""
+    (tmp_path / "tests").mkdir()
+    (tmp_path / "tests" / "test_example.py").touch()
+
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text("[tool.pytest.ini_options]\naddopts = \"-n auto\"")
+
+    pillar = TestingPillar()
+    results = pillar._check_parallel_test_config(tmp_path, {"python"})
+
+    assert len(results) == 1
+    assert results[0].passed
+
+
+def test_check_coverage_threshold_from_config(tmp_path: Path) -> None:
+    """Test coverage threshold check from config."""
+    (tmp_path / "tests").mkdir()
+    (tmp_path / "tests" / "test_example.py").touch()
+
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text("[tool.coverage.report]\nfail_under = 80")
+
+    pillar = TestingPillar()
+    results = pillar._check_coverage_threshold(tmp_path, {"python"})
+
+    assert len(results) == 1
+    assert results[0].passed
+    assert "80" in results[0].message
+
+
+# Level 5 tests
+def test_check_property_based_testing_python(tmp_path: Path) -> None:
+    """Test property-based testing check for Python."""
+    (tmp_path / "tests").mkdir()
+    (tmp_path / "tests" / "test_example.py").touch()
+
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text("[tool.poetry.dependencies]\nhypothesis = \"^6.0\"")
+
+    pillar = TestingPillar()
+    results = pillar._check_property_based_testing(tmp_path, {"python"})
+
+    assert len(results) == 1
+    assert results[0].passed
