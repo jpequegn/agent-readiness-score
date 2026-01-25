@@ -65,3 +65,17 @@ def test_detect_test_infrastructure_none(tmp_path: Path) -> None:
 
     assert test_info["languages"] == set()
     assert test_info["test_dirs"] == []
+
+
+def test_detect_test_infrastructure_no_duplicates(tmp_path: Path) -> None:
+    """Test files matching multiple patterns are not duplicated."""
+    test_dir = tmp_path / "tests"
+    test_dir.mkdir()
+    # File matches both test_*.py and *_test.py patterns
+    (test_dir / "test_test.py").touch()
+
+    pillar = TestingPillar()
+    test_info = pillar._detect_test_infrastructure(tmp_path)
+
+    # Should only appear once in the list
+    assert len(test_info["test_files"]["python"]) == 1

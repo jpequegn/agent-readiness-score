@@ -54,13 +54,15 @@ class TestingPillar(Pillar):
             "rust": ["*_test.rs"],
         }
 
+        seen_files = set()
         for test_dir in test_dirs:
             for lang, patterns in test_patterns.items():
                 for pattern in patterns:
                     for test_file in test_dir.rglob(pattern):
-                        if test_file.is_file():
+                        if test_file.is_file() and str(test_file) not in seen_files:
                             test_files[lang].append(test_file)
                             languages.add(lang)
+                            seen_files.add(str(test_file))
 
         return {
             "languages": languages,
