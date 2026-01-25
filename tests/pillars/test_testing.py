@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from agent_readiness.pillars.testing import TestingPillar
+from agent_readiness.models import Severity
 
 
 def test_testing_pillar_name() -> None:
@@ -79,3 +80,26 @@ def test_detect_test_infrastructure_no_duplicates(tmp_path: Path) -> None:
 
     # Should only appear once in the list
     assert len(test_info["test_files"]["python"]) == 1
+
+
+def test_check_tests_exist_found(tmp_path: Path) -> None:
+    """Test tests exist check passes when tests found."""
+    (tmp_path / "tests").mkdir()
+    (tmp_path / "tests" / "test_example.py").touch()
+
+    pillar = TestingPillar()
+    result = pillar._check_tests_exist(tmp_path)
+
+    assert result.passed
+    assert "1 test file" in result.message
+    assert result.severity == Severity.REQUIRED
+    assert result.level == 1
+
+
+def test_check_tests_exist_not_found(tmp_path: Path) -> None:
+    """Test tests exist check fails when no tests found."""
+    pillar = TestingPillar()
+    result = pillar._check_tests_exist(tmp_path)
+
+    assert not result.passed
+    assert "No test" in result.message

@@ -3,7 +3,7 @@
 from pathlib import Path
 
 from agent_readiness.pillar import Pillar
-from agent_readiness.models import CheckResult
+from agent_readiness.models import CheckResult, Severity
 
 
 class TestingPillar(Pillar):
@@ -69,3 +69,35 @@ class TestingPillar(Pillar):
             "test_dirs": test_dirs,
             "test_files": test_files,
         }
+
+    def _check_tests_exist(self, target_dir: Path) -> CheckResult:
+        """Check if any tests exist in the repository.
+
+        Args:
+            target_dir: Directory to scan
+
+        Returns:
+            Single CheckResult for the repository
+        """
+        test_info = self._detect_test_infrastructure(target_dir)
+        total_files = sum(len(files) for files in test_info["test_files"].values())
+
+        if total_files > 0:
+            num_dirs = len(test_info["test_dirs"])
+            file_word = "file" if total_files == 1 else "files"
+            dir_word = "directory" if num_dirs == 1 else "directories"
+            return CheckResult(
+                name="Tests exist",
+                passed=True,
+                message=f"Found {total_files} test {file_word} in {num_dirs} {dir_word}",
+                severity=Severity.REQUIRED,
+                level=1,
+            )
+        else:
+            return CheckResult(
+                name="Tests exist",
+                passed=False,
+                message="No test files or directories found",
+                severity=Severity.REQUIRED,
+                level=1,
+            )
