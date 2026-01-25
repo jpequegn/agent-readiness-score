@@ -184,3 +184,54 @@ def test_check_tests_in_ci_not_found(tmp_path: Path) -> None:
 
     assert not result.passed
     assert "No CI configuration" in result.message
+
+
+def test_check_coverage_measured_python(tmp_path: Path) -> None:
+    """Test coverage measured check for Python with pytest-cov."""
+    # Create Python test infrastructure
+    (tmp_path / "tests").mkdir()
+    (tmp_path / "tests" / "test_example.py").touch()
+
+    # Create pyproject.toml with pytest-cov
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text("""
+[tool.pytest.ini_options]
+addopts = "--cov=myapp --cov-report=xml"
+
+[tool.coverage.run]
+source = ["src"]
+""")
+
+    pillar = TestingPillar()
+    results = pillar._check_coverage_measured(tmp_path)
+
+    # Should return one CheckResult for Python
+    assert len(results) == 1
+    assert results[0].name == "Coverage measured (python)"
+    assert results[0].passed
+    assert "pytest-cov" in results[0].message.lower()
+    assert results[0].severity == Severity.RECOMMENDED
+    assert results[0].level == 3
+
+
+def test_check_coverage_measured_not_configured(tmp_path: Path) -> None:
+    """Test coverage measured check fails when not configured."""
+    # Create Python test infrastructure without coverage config
+    (tmp_path / "tests").mkdir()
+    (tmp_path / "tests" / "test_example.py").touch()
+
+    # Create pyproject.toml without coverage config
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text("""
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+""")
+
+    pillar = TestingPillar()
+    results = pillar._check_coverage_measured(tmp_path)
+
+    # Should return one CheckResult for Python
+    assert len(results) == 1
+    assert results[0].name == "Coverage measured (python)"
+    assert not results[0].passed
+    assert "not configured" in results[0].message.lower()

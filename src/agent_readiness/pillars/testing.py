@@ -271,3 +271,233 @@ class TestingPillar(Pillar):
             severity=Severity.RECOMMENDED,
             level=3,
         )
+
+    def _check_coverage_measured(self, target_dir: Path) -> list[CheckResult]:
+        """Check if test coverage is being measured for each language.
+
+        Args:
+            target_dir: Directory to scan
+
+        Returns:
+            List of CheckResult, one per detected language
+        """
+        test_info = self._detect_test_infrastructure(target_dir)
+        results = []
+
+        if not test_info["languages"]:
+            # No tests detected, return empty list
+            return results
+
+        for language in sorted(test_info["languages"]):
+            if language == "python":
+                result = self._check_python_coverage(target_dir)
+            elif language == "javascript":
+                result = self._check_javascript_coverage(target_dir)
+            elif language == "go":
+                result = self._check_go_coverage(target_dir)
+            elif language == "rust":
+                result = self._check_rust_coverage(target_dir)
+            else:
+                # Unknown language, skip
+                continue
+
+            results.append(result)
+
+        return results
+
+    def _check_python_coverage(self, target_dir: Path) -> CheckResult:
+        """Check if Python coverage is configured.
+
+        Looks for:
+        - pytest-cov in pyproject.toml [tool.pytest.ini_options] addopts
+        - coverage section in pyproject.toml
+        - .coveragerc file
+        - pytest.ini with coverage options
+
+        Args:
+            target_dir: Directory to scan
+
+        Returns:
+            CheckResult for Python coverage
+        """
+        # Check pyproject.toml
+        pyproject_path = target_dir / "pyproject.toml"
+        if pyproject_path.exists():
+            try:
+                content = pyproject_path.read_text(encoding="utf-8", errors="ignore")
+                # Check for pytest-cov in addopts or coverage tool section
+                if "--cov" in content or "[tool.coverage" in content:
+                    return CheckResult(
+                        name="Coverage measured (python)",
+                        passed=True,
+                        message="Python coverage measured (pytest-cov configured)",
+                        severity=Severity.RECOMMENDED,
+                        level=3,
+                    )
+            except Exception:
+                pass
+
+        # Check .coveragerc
+        coveragerc_path = target_dir / ".coveragerc"
+        if coveragerc_path.exists():
+            return CheckResult(
+                name="Coverage measured (python)",
+                passed=True,
+                message="Python coverage measured (.coveragerc found)",
+                severity=Severity.RECOMMENDED,
+                level=3,
+            )
+
+        # Check pytest.ini
+        pytest_ini_path = target_dir / "pytest.ini"
+        if pytest_ini_path.exists():
+            try:
+                content = pytest_ini_path.read_text(encoding="utf-8", errors="ignore")
+                if "--cov" in content or "coverage" in content:
+                    return CheckResult(
+                        name="Coverage measured (python)",
+                        passed=True,
+                        message="Python coverage measured (pytest.ini configured)",
+                        severity=Severity.RECOMMENDED,
+                        level=3,
+                    )
+            except Exception:
+                pass
+
+        # Not configured
+        return CheckResult(
+            name="Coverage measured (python)",
+            passed=False,
+            message="Python coverage not configured",
+            severity=Severity.RECOMMENDED,
+            level=3,
+        )
+
+    def _check_javascript_coverage(self, target_dir: Path) -> CheckResult:
+        """Check if JavaScript coverage is configured.
+
+        Looks for:
+        - jest collectCoverage in jest.config.js or package.json
+        - vitest coverage in vitest.config
+        - nyc in package.json scripts
+
+        Args:
+            target_dir: Directory to scan
+
+        Returns:
+            CheckResult for JavaScript coverage
+        """
+        # Check package.json
+        package_json_path = target_dir / "package.json"
+        if package_json_path.exists():
+            try:
+                content = package_json_path.read_text(encoding="utf-8", errors="ignore")
+                if "collectCoverage" in content or "coverage" in content:
+                    return CheckResult(
+                        name="Coverage measured (javascript)",
+                        passed=True,
+                        message="JavaScript coverage measured (package.json configured)",
+                        severity=Severity.RECOMMENDED,
+                        level=3,
+                    )
+            except Exception:
+                pass
+
+        # Check jest.config.js
+        jest_config_path = target_dir / "jest.config.js"
+        if jest_config_path.exists():
+            try:
+                content = jest_config_path.read_text(encoding="utf-8", errors="ignore")
+                if "collectCoverage" in content or "coverage" in content:
+                    return CheckResult(
+                        name="Coverage measured (javascript)",
+                        passed=True,
+                        message="JavaScript coverage measured (jest.config.js configured)",
+                        severity=Severity.RECOMMENDED,
+                        level=3,
+                    )
+            except Exception:
+                pass
+
+        # Check vitest.config
+        for vitest_config in ["vitest.config.js", "vitest.config.ts"]:
+            vitest_config_path = target_dir / vitest_config
+            if vitest_config_path.exists():
+                try:
+                    content = vitest_config_path.read_text(encoding="utf-8", errors="ignore")
+                    if "coverage" in content:
+                        return CheckResult(
+                            name="Coverage measured (javascript)",
+                            passed=True,
+                            message="JavaScript coverage measured (vitest configured)",
+                            severity=Severity.RECOMMENDED,
+                            level=3,
+                        )
+                except Exception:
+                    pass
+
+        # Not configured
+        return CheckResult(
+            name="Coverage measured (javascript)",
+            passed=False,
+            message="JavaScript coverage not configured",
+            severity=Severity.RECOMMENDED,
+            level=3,
+        )
+
+    def _check_go_coverage(self, target_dir: Path) -> CheckResult:
+        """Check if Go coverage is configured.
+
+        Go has built-in coverage support, so this always passes.
+
+        Args:
+            target_dir: Directory to scan
+
+        Returns:
+            CheckResult for Go coverage (always passes)
+        """
+        return CheckResult(
+            name="Coverage measured (go)",
+            passed=True,
+            message="Go coverage measured (built-in support)",
+            severity=Severity.RECOMMENDED,
+            level=3,
+        )
+
+    def _check_rust_coverage(self, target_dir: Path) -> CheckResult:
+        """Check if Rust coverage is configured.
+
+        Looks for:
+        - tarpaulin in Cargo.toml
+        - llvm-cov configuration
+
+        Args:
+            target_dir: Directory to scan
+
+        Returns:
+            CheckResult for Rust coverage
+        """
+        # Check Cargo.toml for tarpaulin or llvm-cov
+        cargo_toml_path = target_dir / "Cargo.toml"
+        if cargo_toml_path.exists():
+            try:
+                content = cargo_toml_path.read_text(encoding="utf-8", errors="ignore")
+                if "tarpaulin" in content or "llvm-cov" in content:
+                    return CheckResult(
+                        name="Coverage measured (rust)",
+                        passed=True,
+                        message="Rust coverage measured (tarpaulin/llvm-cov configured)",
+                        severity=Severity.RECOMMENDED,
+                        level=3,
+                    )
+            except Exception:
+                pass
+
+        # Not configured
+        return CheckResult(
+            name="Coverage measured (rust)",
+            passed=False,
+            message="Rust coverage not configured",
+            severity=Severity.RECOMMENDED,
+            level=3,
+        )
