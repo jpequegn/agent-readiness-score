@@ -206,3 +206,68 @@ class TestingPillar(Pillar):
                 severity=Severity.RECOMMENDED,
                 level=2,
             )
+
+    def _check_tests_in_ci(self, target_dir: Path) -> CheckResult:
+        """Check if tests run in CI pipeline.
+
+        Args:
+            target_dir: Directory to scan
+
+        Returns:
+            Single CheckResult for the repository
+        """
+        # CI configuration locations to check
+        ci_configs = [
+            (".github/workflows", "*.yml", "GitHub Actions"),
+            (".github/workflows", "*.yaml", "GitHub Actions"),
+            (".gitlab-ci.yml", None, "GitLab CI"),
+            (".circleci/config.yml", None, "CircleCI"),
+        ]
+
+        # Test commands to look for
+        test_commands = ["pytest", "npm test", "go test", "cargo test", "make test"]
+
+        for config_path, pattern, ci_name in ci_configs:
+            if pattern:
+                # Directory with multiple files
+                ci_dir = target_dir / config_path
+                if ci_dir.exists() and ci_dir.is_dir():
+                    for ci_file in ci_dir.glob(pattern):
+                        try:
+                            content = ci_file.read_text(encoding="utf-8", errors="ignore").lower()
+                            for cmd in test_commands:
+                                if cmd in content:
+                                    return CheckResult(
+                                        name="Tests in CI",
+                                        passed=True,
+                                        message=f"Tests run in CI: {ci_name} ({ci_file.name})",
+                                        severity=Severity.RECOMMENDED,
+                                        level=3,
+                                    )
+                        except Exception:
+                            continue
+            else:
+                # Single file
+                ci_file = target_dir / config_path
+                if ci_file.exists():
+                    try:
+                        content = ci_file.read_text(encoding="utf-8", errors="ignore").lower()
+                        for cmd in test_commands:
+                            if cmd in content:
+                                return CheckResult(
+                                    name="Tests in CI",
+                                    passed=True,
+                                    message=f"Tests run in CI: {ci_name} ({ci_file.name})",
+                                    severity=Severity.RECOMMENDED,
+                                    level=3,
+                                )
+                    except Exception:
+                        continue
+
+        return CheckResult(
+            name="Tests in CI",
+            passed=False,
+            message="No CI configuration found with test commands",
+            severity=Severity.RECOMMENDED,
+            level=3,
+        )

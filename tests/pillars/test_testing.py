@@ -150,3 +150,37 @@ def test_check_test_command_documented_not_found(tmp_path: Path) -> None:
     result = pillar._check_test_command_documented(tmp_path)
 
     assert not result.passed
+
+
+def test_check_tests_in_ci_github_actions(tmp_path: Path) -> None:
+    """Test CI check passes when tests run in GitHub Actions."""
+    workflows_dir = tmp_path / ".github" / "workflows"
+    workflows_dir.mkdir(parents=True)
+    ci_file = workflows_dir / "ci.yml"
+    ci_file.write_text("""
+name: CI
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run tests
+        run: pytest
+""")
+
+    pillar = TestingPillar()
+    result = pillar._check_tests_in_ci(tmp_path)
+
+    assert result.passed
+    assert "GitHub Actions" in result.message
+    assert result.level == 3
+
+
+def test_check_tests_in_ci_not_found(tmp_path: Path) -> None:
+    """Test CI check fails when no CI configuration found."""
+    pillar = TestingPillar()
+    result = pillar._check_tests_in_ci(tmp_path)
+
+    assert not result.passed
+    assert "No CI configuration" in result.message
