@@ -70,7 +70,7 @@ For exact reproducibility with all dependencies mapped:
 ```bash
 python3 -m venv venv
 source venv/bin/activate
-pip install --requirement requirements-all.lock
+pip install --requirement requirements.lock
 ```
 
 **Use case**: CI/CD, Docker builds, exact environment matching
@@ -97,14 +97,15 @@ pip install -r requirements.txt
 pip install -r requirements-dev.txt
 ```
 
-### `requirements-all.lock`
+### `requirements.lock`
 - **Size**: 1.2K
 - **Format**: Comprehensive lock with dependency tree
-- **Use**: Exact reproducibility, CI/CD pipelines
+- **Use**: Exact reproducibility, CI/CD pipelines, scanner compliance
 - **Tool**: Generated with `uv pip compile`
+- **Recognized by**: Build System, Security, Dev Environment pillars
 
 ```bash
-pip install --requirement requirements-all.lock
+pip install --requirement requirements.lock
 ```
 
 ## Reproducing Environments
@@ -120,7 +121,7 @@ pip install -r requirements.txt
 
 ```bash
 # Guaranteed exact environment
-pip install --requirement requirements-all.lock
+pip install --requirement requirements.lock
 ```
 
 ### In Docker
@@ -206,7 +207,7 @@ pip install -e ".[dev]"
 # Generate all lock files
 uv pip freeze > requirements-dev.txt
 uv pip freeze | grep -v "^-e" > requirements.txt
-uv pip compile pyproject.toml --all-extras -o requirements-all.lock
+uv pip compile pyproject.toml --all-extras -o requirements.lock
 ```
 
 ## Troubleshooting
