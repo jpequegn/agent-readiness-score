@@ -1,0 +1,12 @@
+{
+  "extends": ["eslint:recommended", "plugin:security/recommended"],
+  "env": {
+    "node": true
+  },
+  "plugins": ["security"],
+  "rules": {
+    "no-var": "error",
+    "prefer-const": "error",
+    "security/detect-object-injection": "warn"
+  }
+}

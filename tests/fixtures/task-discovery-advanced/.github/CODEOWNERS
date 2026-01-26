@@ -1,0 +1,14 @@
+# Code ownership rules
+
+# Backend
+/src/api @backend-team
+/src/db @database-team
+
+# Frontend
+/src/ui @frontend-team
+
+# Docs
+/docs @docs-team
+
+# Root
+/ @maintainers
