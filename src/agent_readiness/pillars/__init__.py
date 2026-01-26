@@ -6,6 +6,7 @@ from .dev_environment import DevEnvironmentPillar
 from .documentation import DocumentationPillar
 from .security import SecurityPillar
 from .style import StylePillar
+from .task_discovery import TaskDiscoveryPillar
 from .testing import TestingPillar
 
 __all__ = [
@@ -15,5 +16,6 @@ __all__ = [
     "DocumentationPillar",
     "SecurityPillar",
     "StylePillar",
+    "TaskDiscoveryPillar",
     "TestingPillar",
 ]
