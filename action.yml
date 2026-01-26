@@ -1,0 +1,65 @@
+name: Agent Readiness Score
+description: Check your repository's agent readiness score and enforce quality standards
+
+inputs:
+  path:
+    description: 'Path to scan (default: .)'
+    required: false
+    default: '.'
+
+  min-level:
+    description: 'Minimum required maturity level (1-5). Action fails if score is below this.'
+    required: false
+    default: '3'
+
+  fail-below:
+    description: 'Fail if score is below min-level'
+    required: false
+    default: 'true'
+
+  pillars:
+    description: 'Comma-separated list of pillars to check (leave empty for all)'
+    required: false
+    default: ''
+
+  format:
+    description: 'Output format: text, json, or markdown'
+    required: false
+    default: 'markdown'
+
+  comment-on-pr:
+    description: 'Post results as a comment on pull requests'
+    required: false
+    default: 'true'
+
+  fail-on-error:
+    description: 'Fail the action if scan encounters an error'
+    required: false
+    default: 'false'
+
+outputs:
+  score:
+    description: 'Overall readiness score (0-100)'
+
+  level:
+    description: 'Maturity level (1-5)'
+
+  passed:
+    description: 'Number of passing checks'
+
+  failed:
+    description: 'Number of failing checks'
+
+  report:
+    description: 'Markdown-formatted report'
+
+  json:
+    description: 'Full results as JSON'
+
+runs:
+  using: 'node20'
+  main: 'action/index.js'
+
+branding:
+  icon: 'check-circle'
+  color: 'green'

@@ -1,0 +1,79 @@
+name: Agent Readiness Examples
+
+on:
+  workflow_dispatch:
+
+jobs:
+  # Example 1: Strict check (must be Level 5)
+  strict-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - run: pip install .
+      - name: Strict Readiness Check
+        uses: ./
+        with:
+          path: .
+          min-level: 5
+          fail-below: true
+          comment-on-pr: false
+
+  # Example 2: Specific pillar check
+  security-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - run: pip install .
+      - name: Security Pillar Check
+        uses: ./
+        with:
+          path: .
+          pillars: Security,Testing
+          min-level: 3
+          comment-on-pr: false
+
+  # Example 3: Report only (no fail)
+  report-only:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - run: pip install .
+      - name: Generate Readiness Report
+        uses: ./
+        with:
+          path: .
+          fail-below: false
+          format: markdown
+
+  # Example 4: JSON output for analysis
+  json-analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - run: pip install .
+      - name: Readiness Analysis
+        uses: ./
+        id: readiness
+        with:
+          path: .
+          format: json
+          fail-below: false
+
+      - name: Parse Results
+        run: |
+          echo "Score: ${{ steps.readiness.outputs.score }}"
+          echo "Level: ${{ steps.readiness.outputs.level }}"
+          echo "Passed: ${{ steps.readiness.outputs.passed }}"
+          echo "Failed: ${{ steps.readiness.outputs.failed }}"
