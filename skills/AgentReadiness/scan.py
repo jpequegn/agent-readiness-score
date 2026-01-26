@@ -12,6 +12,16 @@ from typing import Optional
 
 try:
     from agent_readiness.scanner import Scanner
+    from agent_readiness.pillars import (
+        BuildPillar,
+        DebuggingObservabilityPillar,
+        DevEnvironmentPillar,
+        DocumentationPillar,
+        SecurityPillar,
+        StylePillar,
+        TaskDiscoveryPillar,
+        TestingPillar,
+    )
 except ImportError:
     print("Error: agent-readiness-score not installed. Run: pip install agent-readiness-score")
     sys.exit(1)
@@ -29,17 +39,30 @@ def scan_repository(path: str = ".", format: str = "natural") -> dict:
         Scan results as dictionary
     """
     try:
-        scanner = Scanner(Path(path))
-        result = scanner.scan()
+        scanner = Scanner()
+        # Register all pillars
+        scanner.register_pillars([
+            StylePillar(),
+            BuildPillar(),
+            TestingPillar(),
+            DocumentationPillar(),
+            DevEnvironmentPillar(),
+            DebuggingObservabilityPillar(),
+            SecurityPillar(),
+            TaskDiscoveryPillar(),
+        ])
+        result = scanner.scan(Path(path))
+        # Handle both ScanResult objects and plain dicts (for testing)
+        result_dict = result.to_dict() if hasattr(result, 'to_dict') else result
 
         if format == "json":
-            return result
+            return result_dict
         elif format == "natural":
-            return format_natural_output(result)
+            return format_natural_output(result_dict)
         elif format == "markdown":
-            return format_markdown_output(result)
+            return format_markdown_output(result_dict)
         else:
-            return result
+            return result_dict
     except Exception as e:
         return {
             "error": str(e),
@@ -186,11 +209,24 @@ def scan_pillar(path: str, pillar_name: str, format: str = "natural") -> dict:
         Pillar scan results
     """
     try:
-        scanner = Scanner(Path(path))
-        result = scanner.scan()
+        scanner = Scanner()
+        # Register all pillars
+        scanner.register_pillars([
+            StylePillar(),
+            BuildPillar(),
+            TestingPillar(),
+            DocumentationPillar(),
+            DevEnvironmentPillar(),
+            DebuggingObservabilityPillar(),
+            SecurityPillar(),
+            TaskDiscoveryPillar(),
+        ])
+        result = scanner.scan(Path(path))
+        # Handle both ScanResult objects and plain dicts (for testing)
+        result_dict = result.to_dict() if hasattr(result, 'to_dict') else result
 
         # Find the pillar
-        for pillar in result.get("pillars", []):
+        for pillar in result_dict.get("pillars", []):
             if pillar.get("name", "").lower() == pillar_name.lower():
                 if format == "natural":
                     return format_pillar_natural(pillar)
@@ -238,12 +274,25 @@ def get_recommendations(path: str) -> dict:
         Improvement recommendations
     """
     try:
-        scanner = Scanner(Path(path))
-        result = scanner.scan()
+        scanner = Scanner()
+        # Register all pillars
+        scanner.register_pillars([
+            StylePillar(),
+            BuildPillar(),
+            TestingPillar(),
+            DocumentationPillar(),
+            DevEnvironmentPillar(),
+            DebuggingObservabilityPillar(),
+            SecurityPillar(),
+            TaskDiscoveryPillar(),
+        ])
+        result = scanner.scan(Path(path))
+        # Handle both ScanResult objects and plain dicts (for testing)
+        result_dict = result.to_dict() if hasattr(result, 'to_dict') else result
 
         # Collect all failed checks
         failed_checks = []
-        for pillar in result.get("pillars", []):
+        for pillar in result_dict.get("pillars", []):
             for check in pillar.get("checks", []):
                 if not check.get("passed", False):
                     failed_checks.append({
