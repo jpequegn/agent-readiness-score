@@ -4,6 +4,7 @@ from .build import BuildPillar
 from .debugging_observability import DebuggingObservabilityPillar
 from .dev_environment import DevEnvironmentPillar
 from .documentation import DocumentationPillar
+from .security import SecurityPillar
 from .style import StylePillar
 from .testing import TestingPillar
 
@@ -12,6 +13,7 @@ __all__ = [
     "DebuggingObservabilityPillar",
     "DevEnvironmentPillar",
     "DocumentationPillar",
+    "SecurityPillar",
     "StylePillar",
     "TestingPillar",
 ]
