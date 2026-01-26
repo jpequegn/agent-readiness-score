@@ -1,0 +1,39 @@
+name: Agent Readiness Check
+
+on:
+  pull_request:
+    paths:
+      - '**.py'
+      - '**.js'
+      - '**.json'
+      - '**.md'
+      - 'pyproject.toml'
+      - 'package.json'
+  push:
+    branches:
+      - main
+
+jobs:
+  readiness:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install agent-readiness
+        run: pip install .
+
+      - name: Check Agent Readiness
+        uses: ./
+        with:
+          path: .
+          min-level: 3
+          fail-below: true
+          comment-on-pr: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
