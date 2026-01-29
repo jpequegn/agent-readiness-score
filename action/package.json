@@ -1,0 +1,13 @@
+{
+  "name": "agent-readiness-github-action",
+  "version": "1.0.0",
+  "description": "GitHub Action for Agent Readiness Score",
+  "main": "index.js",
+  "author": "Julien Mika",
+  "license": "MIT",
+  "dependencies": {
+    "@actions/core": "^1.10.0",
+    "@actions/exec": "^1.1.1",
+    "@actions/github": "^6.0.0"
+  }
+}
