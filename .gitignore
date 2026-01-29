@@ -55,3 +55,7 @@ dmypy.json
 
 # Git worktrees
 .worktrees/
+
+# Action dependencies
+action/node_modules
+node_modules/

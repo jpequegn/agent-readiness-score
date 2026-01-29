@@ -58,7 +58,7 @@ outputs:
 
 runs:
   using: 'node20'
-  main: 'action/index.js'
+  main: 'dist/index.js'
 
 branding:
   icon: 'check-circle'
