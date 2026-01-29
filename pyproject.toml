@@ -29,6 +29,7 @@ classifiers = [
 dependencies = [
     "click>=8.0",
     "rich>=13.0",
+    "mcp>=0.5",
 ]
 
 [project.optional-dependencies]

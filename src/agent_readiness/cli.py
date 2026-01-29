@@ -8,7 +8,6 @@ import click
 from rich.console import Console
 from rich.progress import Progress
 from rich.table import Table
-from rich.text import Text
 
 from agent_readiness.pillars import (
     BuildPillar,
@@ -137,7 +136,7 @@ def format_level_indicator(level: int) -> str:
 
 
 @click.command()
-@click.argument("path", type=click.Path(exists=True, file_okay=False))
+@click.argument("path", type=click.Path(exists=True, file_okay=False), required=False)
 @click.option(
     "--format",
     type=click.Choice(["text", "json", "markdown"]),
@@ -147,8 +146,19 @@ def format_level_indicator(level: int) -> str:
 @click.option("--pillar", help="Run only a specific pillar (e.g., 'Style & Validation')")
 @click.option("--level", type=int, help="Show only checks for a specific level (1-5)")
 @click.option("--quiet", is_flag=True, help="Suppress output, only exit code")
-def main(path: str, format: str, pillar: str, level: int, quiet: bool) -> None:
+@click.option("--mcp", is_flag=True, help="Start MCP server mode")
+def main(path: str | None, format: str, pillar: str, level: int, quiet: bool, mcp: bool) -> None:
     """Scan a directory for agent readiness."""
+    if mcp:
+        # Start MCP server
+        from agent_readiness.mcp_server import start_mcp_server_sync
+        start_mcp_server_sync()
+        return
+
+    if not path:
+        click.echo("Error: path argument is required (unless using --mcp)", err=True)
+        sys.exit(1)
+
     try:
         target_path = Path(path).resolve()
 
