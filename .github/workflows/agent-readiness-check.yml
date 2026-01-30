@@ -28,6 +28,12 @@ jobs:
       - name: Install agent-readiness
         run: pip install .
 
+      - name: Install test dependencies
+        run: pip install pytest pytest-cov pytest-xdist
+
+      - name: Run Python tests with coverage
+        run: pytest tests/ -v --cov=agent_readiness --cov-report=term-missing --cov-report=xml -n auto --cov-fail-under=15
+
       - name: Check Agent Readiness
         uses: ./
         with:

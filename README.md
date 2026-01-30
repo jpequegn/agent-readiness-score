@@ -62,6 +62,57 @@ agent-readiness /path/to/repo
 agent-readiness . --format json
 ```
 
+## Development
+
+### Running Tests
+
+This project uses **pytest** for Python tests and **Jest** for JavaScript tests (GitHub Action).
+
+#### Python Tests
+
+```bash
+# Install development dependencies
+pip install -e ".[dev]"
+
+# Run all tests
+pytest tests/
+
+# Run with coverage report
+pytest tests/ --cov=agent_readiness --cov-report=html
+
+# Run tests in parallel (faster)
+pytest tests/ -n auto
+
+# Run specific test file
+pytest tests/test_cli.py -v
+```
+
+#### JavaScript Tests
+
+```bash
+# Install dependencies
+npm install
+
+# Run Jest tests for GitHub Action
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Generate coverage report
+npm run test:coverage
+```
+
+For detailed testing documentation, see [TESTING.md](./TESTING.md).
+
+### Test Coverage
+
+- **Python:** Target 25%+ coverage
+- **JavaScript:** Target 70%+ coverage for action code
+- **CI/CD:** Minimum 15% coverage required for Python
+
+Coverage reports are automatically generated on every PR and push to main.
+
 ## Contributing
 
 We're building this in the open! Check the [Issues](https://github.com/jpequegn/agent-readiness-score/issues) for ways to contribute.
