@@ -123,15 +123,16 @@ Each pillar has its own tracking issue with specific metrics to implement.
 
 - [x] Core scanning framework
 - [x] Pillar 1: Style & Validation checks
-- [ ] Pillar 2: Build System checks
+- [x] Pillar 2: Build System checks
 - [x] Pillar 3: Testing checks
-- [ ] Pillar 4: Documentation checks
-- [ ] Pillar 5: Dev Environment checks
-- [ ] Pillar 6: Debugging & Observability checks
-- [ ] Pillar 7: Security checks
-- [ ] Pillar 8: Task Discovery checks
-- [ ] CLI tool
-- [ ] GitHub Action
+- [x] Pillar 4: Documentation checks
+- [x] Pillar 5: Dev Environment checks
+- [x] Pillar 6: Debugging & Observability checks
+- [x] Pillar 7: Security checks
+- [x] Pillar 8: Task Discovery checks
+- [x] CLI tool
+- [x] GitHub Action
+- [x] MCP Server
 - [ ] VS Code extension
 
 ## License
